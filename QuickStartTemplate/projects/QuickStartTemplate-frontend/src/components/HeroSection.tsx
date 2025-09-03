@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react'
+import FlipCard from './FlipCard'
 
 interface HeroSectionProps {}
 
 const HeroSection: React.FC<HeroSectionProps> = () => {
-  const [location, setLocation] = useState<string>('Berlin, Germany')
+  const [location, setLocation] = useState<string>('')
   const [isLoadingLocation, setIsLoadingLocation] = useState<boolean>(false)
   const [showLocationDropdown, setShowLocationDropdown] = useState<boolean>(false)
   const [customLocation, setCustomLocation] = useState<string>('')
+  const [hasLocationBeenSet, setHasLocationBeenSet] = useState<boolean>(false)
 
   // Popular locations for dropdown
   const popularLocations = [
@@ -43,10 +45,12 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
               const country = data.address.country || ''
               const locationString = city && country ? `${city}, ${country}` : city || country || 'Unknown Location'
               setLocation(locationString)
+              setHasLocationBeenSet(true)
             }
           } catch (error) {
             console.error('Error fetching location name:', error)
             setLocation('Location detected')
+            setHasLocationBeenSet(true)
           } finally {
             setIsLoadingLocation(false)
             setShowLocationDropdown(false)
@@ -65,12 +69,18 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
 
   // Request location on component mount
   useEffect(() => {
-    // Automatically ask for location permission
-    getUserLocation()
+    // Set default location first, then try to get user's location
+    setLocation('Berlin, Germany')
+    setHasLocationBeenSet(true)
+    // Automatically ask for location permission after a short delay
+    setTimeout(() => {
+      getUserLocation()
+    }, 1000)
   }, [])
 
   const handleLocationSelect = (selectedLocation: string) => {
     setLocation(selectedLocation)
+    setHasLocationBeenSet(true)
     setShowLocationDropdown(false)
     setCustomLocation('')
   }
@@ -79,6 +89,7 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
     e.preventDefault()
     if (customLocation.trim()) {
       setLocation(customLocation)
+      setHasLocationBeenSet(true)
       setShowLocationDropdown(false)
       setCustomLocation('')
     }
@@ -201,6 +212,14 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* FlipCard - Only visible after location is set */}
+          <div className="mt-8">
+            <FlipCard 
+              isVisible={hasLocationBeenSet && !isLoadingLocation} 
+              location={location}
+            />
           </div>
 
         </div>

@@ -1,3 +1,130 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom animations for HeroSection */
+@keyframes gradient-shift {
+  0%, 100% { 
+    transform: translateX(0%) translateY(0%);
+  }
+  33% { 
+    transform: translateX(30%) translateY(-30%);
+  }
+  66% { 
+    transform: translateX(-30%) translateY(20%);
+  }
+}
+
+@keyframes gradient-drift {
+  0%, 100% { 
+    transform: translateX(0%) translateY(0%) rotate(0deg);
+  }
+  33% { 
+    transform: translateX(-20%) translateY(20%) rotate(120deg);
+  }
+  66% { 
+    transform: translateX(20%) translateY(-10%) rotate(240deg);
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  33% {
+    transform: translateY(-20px) translateX(10px);
+  }
+  66% {
+    transform: translateY(10px) translateX(-5px);
+  }
+}
+
+@keyframes float-delayed {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  25% {
+    transform: translateY(15px) translateX(-10px);
+  }
+  75% {
+    transform: translateY(-10px) translateX(15px);
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animation classes */
+.animate-gradient-shift {
+  animation: gradient-shift 20s ease infinite;
+}
+
+.animate-gradient-drift {
+  animation: gradient-drift 25s ease infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float-slow 8s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float-delayed 10s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out forwards;
+}
+
+.animation-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animation-delay-400 {
+  animation-delay: 400ms;
+}
+
+.animation-delay-600 {
+  animation-delay: 600ms;
+}
+
+/* Custom scrollbar for dropdown */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #fb923c, #c084fc);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #f97316, #a855f7);
+}

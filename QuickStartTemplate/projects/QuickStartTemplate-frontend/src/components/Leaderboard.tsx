@@ -8,76 +8,78 @@ interface LeaderboardEntry {
   rank: number
 }
 
+const sunsetPlaceholder: string = 'https://thumbs.dreamstime.com/b/serene-landscape-small-island-lone-tree-sunset-artificial-intelligence-generated-east-asian-artwork-368347650.jpg';
+
 const Leaderboard: React.FC = () => {
   // Mock data for leaderboard entries
   const mockLeaderboard: LeaderboardEntry[] = [
     {
       id: 1,
-      username: 'sunset_chaser',
-      postImage: 'https://via.placeholder.com/400x400/FF6B6B/FFFFFF?text=Sunset+1',
+      username: 'MKZTQW...7XFA',
+      postImage: sunsetPlaceholder,
       likes: 15234,
       rank: 1
     },
     {
       id: 2,
-      username: 'golden_hour',
-      postImage: 'https://via.placeholder.com/400x400/4ECDC4/FFFFFF?text=Sunset+2',
+      username: 'LQNRDV...PZ3M',
+      postImage: sunsetPlaceholder,
       likes: 12891,
       rank: 2
     },
     {
       id: 3,
-      username: 'sky_painter',
-      postImage: 'https://via.placeholder.com/400x400/45B7D1/FFFFFF?text=Sunset+3',
+      username: 'XWJH6C...K5U',
+      postImage: sunsetPlaceholder,
       likes: 11567,
       rank: 3
     },
     {
       id: 4,
-      username: 'twilight_lover',
-      postImage: 'https://via.placeholder.com/400x400/F7DC6F/FFFFFF?text=Sunset+4',
+      username: 'TRG7PQ...M2NL',
+      postImage: sunsetPlaceholder,
       likes: 10234,
       rank: 4
     },
     {
       id: 5,
-      username: 'dusk_till_dawn',
-      postImage: 'https://via.placeholder.com/400x400/BB8FCE/FFFFFF?text=Sunset+5',
+      username: 'ZF4YQX...H9VA',
+      postImage: sunsetPlaceholder,
       likes: 9876,
       rank: 5
     },
     {
       id: 6,
-      username: 'horizon_hunter',
-      postImage: 'https://via.placeholder.com/400x400/85C1E2/FFFFFF?text=Sunset+6',
+      username: 'BQ2LNS...7KEG',
+      postImage: sunsetPlaceholder,
       likes: 8543,
       rank: 6
     },
     {
       id: 7,
-      username: 'color_burst',
-      postImage: 'https://via.placeholder.com/400x400/F8B739/FFFFFF?text=Sunset+7',
+      username: 'HCMX5R...QYUT',
+      postImage: sunsetPlaceholder,
       likes: 7892,
       rank: 7
     },
     {
       id: 8,
-      username: 'evening_glow',
-      postImage: 'https://via.placeholder.com/400x400/EC7063/FFFFFF?text=Sunset+8',
+      username: 'PWJ3KZ...D6RF',
+      postImage: sunsetPlaceholder,
       likes: 6754,
       rank: 8
     },
     {
       id: 9,
-      username: 'solar_flare',
-      postImage: 'https://via.placeholder.com/400x400/A569BD/FFFFFF?text=Sunset+9',
+      username: 'KUV2QA...T3LP',
+      postImage: sunsetPlaceholder,
       likes: 5432,
       rank: 9
     },
     {
       id: 10,
-      username: 'afterglow',
-      postImage: 'https://via.placeholder.com/400x400/58D68D/FFFFFF?text=Sunset+10',
+      username: 'hSY2DB...R3TV',
+      postImage: sunsetPlaceholder,
       likes: 4567,
       rank: 10
     }

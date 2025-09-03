@@ -93,7 +93,7 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
   }
 
   return (
-    <div className="relative w-full min-h-[600px] overflow-hidden">
+    <div className="relative w-full min-h-[600px] overflow-visible">
       <div className="absolute inset-0 rounded-full">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-400 via-red-500 to-pink-500 animate-gradient-shift rounded-full" />
         <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/40 via-pink-500/30 to-yellow-400/40 animate-gradient-drift rounded-full" />
@@ -116,7 +116,7 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
           </h1>
 
           {/* Location selector */}
-          <div className="mb-8 inline-block">
+          <div className="mb-8 inline-block relative z-40">
             <div className="relative">
               <button
                 onClick={() => setShowLocationDropdown(!showLocationDropdown)}
@@ -146,7 +146,7 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
 
               {/* Dropdown menu */}
               {showLocationDropdown && (
-                <div className="absolute -z-40 top-full mt-2 left-1/2 -translate-x-1/2 w-64 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/50 overflow-hidden">
+                <div className="absolute z-50 top-full mt-2 left-1/2 -translate-x-1/2 w-64 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/50 overflow-visible">
                   <div className="p-2">
                     <button
                       onClick={getUserLocation}

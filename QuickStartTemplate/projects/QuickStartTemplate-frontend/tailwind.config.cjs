@@ -2,7 +2,13 @@
 module.exports = {
   content: ['./src/**/*.{js,ts,jsx,tsx}'],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        'sans': ['Playfair Display', 'serif'],
+        'serif': ['Playfair Display', 'serif'],
+        'playfair': ['Playfair Display', 'serif'],
+      }
+    },
   },
   daisyui: {
     themes: ['lofi'],

@@ -5,6 +5,7 @@ import React, { useEffect, useRef } from 'react'
 interface MapFullScreenProps {
   open: boolean
   onClose: () => void
+  center?: [number, number]
 }
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
@@ -15,29 +16,167 @@ if (!MAPBOX_TOKEN) {
 
 mapboxgl.accessToken = MAPBOX_TOKEN
 
-const MapFullScreen: React.FC<MapFullScreenProps> = ({ open, onClose }) => {
+const BASE_BW_STYLE = 'mapbox://styles/mapbox/light-v11'
+
+const MapFullScreen: React.FC<MapFullScreenProps> = ({ open, onClose, center }) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
 
   useEffect(() => {
-    if (!open) return
-    if (!mapContainerRef.current) return
-    if (mapRef.current) return // already initialized
+    if (!open || !mapContainerRef.current) return
+
+    // Remove previous map instance and clear container
+    if (mapRef.current) {
+      mapRef.current.remove()
+      mapRef.current = null
+    }
+    mapContainerRef.current.innerHTML = ''
 
     mapRef.current = new mapboxgl.Map({
       container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [-74.006, 40.7128],
+      style: BASE_BW_STYLE,
+      center: center || [13.4050, 52.5200], // Berlin
       zoom: 10,
     })
 
+    const applyHighContrastBW = () => {
+      if (!mapRef.current) return
+      const map = mapRef.current
+      const layers = map.getStyle()?.layers || []
+
+      // Palette
+      const LAND = '#ffffff'
+      const LAND_ALT = '#f2f2f2'
+      const WATER = '#e6e6e6'
+      const ROAD_MAIN = '#000000'
+      const ROAD_SEC = '#222222'
+      const OUTLINE = '#000000'
+      const BUILDING = '#d0d0d0'
+      const PARK = '#ededed'
+      const TEXT = '#000000'
+      const ICON = '#111111'
+
+      layers.forEach(l => {
+        const { id, type } = l
+        try {
+          // Background
+            if (type === 'background') {
+            map.setPaintProperty(id, 'background-color', LAND)
+          }
+
+          const idLower = id.toLowerCase()
+
+          // Water
+          if (idLower.includes('water')) {
+            if (type === 'fill') map.setPaintProperty(id, 'fill-color', WATER)
+            if (type === 'line') map.setPaintProperty(id, 'line-color', WATER)
+          }
+
+          // Parks / green areas
+          if (idLower.includes('park') || idLower.includes('green') || idLower.includes('landuse')) {
+            if (type === 'fill') map.setPaintProperty(id, 'fill-color', PARK)
+          }
+
+          // Buildings
+          if (idLower.includes('building')) {
+            if (type === 'fill') {
+              map.setPaintProperty(id, 'fill-color', BUILDING)
+              map.setPaintProperty(id, 'fill-outline-color', OUTLINE)
+            }
+          }
+
+          // Roads
+          if (idLower.includes('road') || idLower.includes('street') || idLower.includes('highway')) {
+            if (type === 'line') {
+              const main = idLower.includes('motorway') || idLower.includes('trunk') || idLower.includes('primary')
+              map.setPaintProperty(id, 'line-color', main ? ROAD_MAIN : ROAD_SEC)
+              // Boost contrast by widening slighty (ignore failures)
+              try {
+                const currentWidth = map.getPaintProperty(id, 'line-width')
+                if (typeof currentWidth === 'number') {
+                  map.setPaintProperty(id, 'line-width', Math.max(currentWidth, main ? 2.4 : 1.4))
+                } else {
+                  map.setPaintProperty(id, 'line-width', main ? 2.4 : 1.4)
+                }
+              } catch {}
+            }
+          }
+
+          // Generic fills (landuse etc.)
+          if (type === 'fill' && !idLower.includes('water') && !idLower.includes('park') && !idLower.includes('building')) {
+            map.setPaintProperty(id, 'fill-color', LAND_ALT)
+            try {
+              map.setPaintProperty(id, 'fill-outline-color', '#bfbfbf')
+            } catch {}
+          }
+
+          // Lines not already touched
+          if (type === 'line' && !idLower.includes('road') && !idLower.includes('water')) {
+            map.setPaintProperty(id, 'line-color', '#4d4d4d')
+          }
+
+          // Symbols (labels/icons)
+          if (type === 'symbol') {
+            try {
+              map.setPaintProperty(id, 'text-color', TEXT)
+              map.setPaintProperty(id, 'icon-color', ICON)
+              map.setPaintProperty(id, 'text-halo-color', '#ffffff')
+              map.setPaintProperty(id, 'text-halo-width', 1.2)
+              map.setPaintProperty(id, 'text-halo-blur', 0.2)
+            } catch {}
+          }
+
+          // Circles (POIs)
+          if (type === 'circle') {
+            map.setPaintProperty(id, 'circle-color', '#111111')
+            try {
+              map.setPaintProperty(id, 'circle-stroke-color', '#ffffff')
+              map.setPaintProperty(id, 'circle-stroke-width', 0.6)
+            } catch {}
+          }
+
+          // Hillshade
+          if (type === 'hillshade') {
+            try {
+              map.setPaintProperty(id, 'hillshade-shadow-color', '#333333')
+              map.setPaintProperty(id, 'hillshade-highlight-color', '#bbbbbb')
+            } catch {}
+          }
+
+          // Desaturate where possible
+          const saturationProps = [
+            'fill-saturation',
+            'line-saturation',
+            'background-saturation',
+            'circle-saturation',
+            'symbol-saturation'
+          ]
+          saturationProps.forEach(p => {
+            try { map.setPaintProperty(id, p as any, -1) } catch {}
+          })
+          // Remove hue/brightness variance
+          const adjustments = [
+            'fill-brightness-min',
+            'fill-brightness-max',
+            'line-brightness-min',
+            'line-brightness-max'
+          ]
+          adjustments.forEach(p => {
+            try { map.setPaintProperty(id, p as any, 0 ) } catch {}
+          })
+        } catch {}
+      })
+    }
+
+    mapRef.current.on('style.load', applyHighContrastBW)
     mapRef.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
 
     return () => {
       mapRef.current?.remove()
       mapRef.current = null
+      if (mapContainerRef.current) mapContainerRef.current.innerHTML = ''
     }
-  }, [open])
+  }, [open, center])
 
   if (!open) return null
 

@@ -1,6 +1,6 @@
+import { useWallet } from '@txnlab/use-wallet-react'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useWallet } from '@txnlab/use-wallet-react'
 import ConnectWallet from './ConnectWallet'
 
 interface HeaderProps {}
@@ -31,11 +31,9 @@ const Header: React.FC<HeaderProps> = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Logo/Brand */}
-            <div className="flex items-center">
+            <div className="flex items-center cursor-pointer" onClick={() => handleNavigation('/')}>
               <h1 className="text-2xl font-bold text-white">
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-200 to-pink-200">
-                  SunsetDApp
-                </span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-200 to-pink-200">Sunsetting</span>
               </h1>
             </div>
 
@@ -47,22 +45,14 @@ const Header: React.FC<HeaderProps> = () => {
               >
                 Leaderboard
               </button>
-              
-              <button
-                onClick={() => handleNavigation('/map')}
-                className="px-6 py-2 text-white font-medium hover:bg-white/20 rounded-full transition-all duration-300 backdrop-blur-sm border border-white/30"
-              >
-                Map
-              </button>
 
               <button
                 onClick={handleConnectWallet}
                 className="px-6 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-medium rounded-full hover:shadow-lg hover:scale-105 transform transition-all duration-300"
               >
-                {activeAddress ? 
-                  `${activeAddress.substring(0, 6)}...${activeAddress.substring(activeAddress.length - 4)}` 
-                  : 'Connect Wallet'
-                }
+                {activeAddress
+                  ? `${activeAddress.substring(0, 6)}...${activeAddress.substring(activeAddress.length - 4)}`
+                  : 'Connect Wallet'}
               </button>
             </nav>
 
@@ -72,26 +62,18 @@ const Header: React.FC<HeaderProps> = () => {
               className="md:hidden flex flex-col justify-center items-center w-8 h-8 space-y-1.5"
               aria-label="Toggle menu"
             >
-              <span 
-                className={`block w-6 h-0.5 bg-white transition-all duration-300 ${
-                  isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''
-                }`}
+              <span
+                className={`block w-6 h-0.5 bg-white transition-all duration-300 ${isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`}
               />
-              <span 
-                className={`block w-6 h-0.5 bg-white transition-all duration-300 ${
-                  isMobileMenuOpen ? 'opacity-0' : ''
-                }`}
-              />
-              <span 
-                className={`block w-6 h-0.5 bg-white transition-all duration-300 ${
-                  isMobileMenuOpen ? '-rotate-45 -translate-y-2' : ''
-                }`}
+              <span className={`block w-6 h-0.5 bg-white transition-all duration-300 ${isMobileMenuOpen ? 'opacity-0' : ''}`} />
+              <span
+                className={`block w-6 h-0.5 bg-white transition-all duration-300 ${isMobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}
               />
             </button>
           </div>
 
           {/* Mobile Menu */}
-          <div 
+          <div
             className={`md:hidden transition-all duration-300 overflow-hidden ${
               isMobileMenuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
             }`}
@@ -103,22 +85,14 @@ const Header: React.FC<HeaderProps> = () => {
               >
                 Leaderboard
               </button>
-              
-              <button
-                onClick={() => handleNavigation('/map')}
-                className="px-6 py-3 text-white font-medium hover:bg-white/20 rounded-full transition-all duration-300 backdrop-blur-sm border border-white/30 text-left"
-              >
-                Map
-              </button>
 
               <button
                 onClick={handleConnectWallet}
                 className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-medium rounded-full hover:shadow-lg transform transition-all duration-300"
               >
-                {activeAddress ? 
-                  `${activeAddress.substring(0, 6)}...${activeAddress.substring(activeAddress.length - 4)}` 
-                  : 'Connect Wallet'
-                }
+                {activeAddress
+                  ? `${activeAddress.substring(0, 6)}...${activeAddress.substring(activeAddress.length - 4)}`
+                  : 'Connect Wallet'}
               </button>
             </nav>
           </div>

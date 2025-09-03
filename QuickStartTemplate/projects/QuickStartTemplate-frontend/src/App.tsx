@@ -1,6 +1,6 @@
 import { SupportedWallet, WalletId, WalletManager, WalletProvider } from '@txnlab/use-wallet-react'
 import { SnackbarProvider } from 'notistack'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import Home from './Home'
 import Header from './components/Header'
 import Leaderboard from './components/Leaderboard'
@@ -55,15 +55,12 @@ export default function App() {
         <Router>
           <div className="min-h-screen">
             <Header />
-            <div className="pt-16"> {/* Add padding top to account for fixed header */}
+            <div className="pt-16">
+              {' '}
+              {/* Add padding top to account for fixed header */}
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/leaderboard" element={<Leaderboard />} />
-                <Route path="/map" element={
-                  <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-purple-600">
-                    <h1 className="text-4xl font-bold text-white">Map Coming Soon</h1>
-                  </div>
-                } />
               </Routes>
             </div>
           </div>

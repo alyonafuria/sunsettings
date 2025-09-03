@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import FlipCard from './FlipCard'
 
 interface HeroSectionProps {}
@@ -21,25 +21,23 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
     'Toronto, Canada',
     'Dubai, UAE',
     'Singapore',
-    'Mumbai, India'
+    'Mumbai, India',
   ]
 
   // Get user's location using Geolocation API
   const getUserLocation = () => {
     setIsLoadingLocation(true)
-    
+
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords
-          
+
           try {
             // Use reverse geocoding API to get location name
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-            )
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
             const data = await response.json()
-            
+
             if (data.address) {
               const city = data.address.city || data.address.town || data.address.village || ''
               const country = data.address.country || ''
@@ -59,7 +57,7 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
         (error) => {
           console.error('Error getting location:', error)
           setIsLoadingLocation(false)
-        }
+        },
       )
     } else {
       console.log('Geolocation is not supported by this browser.')
@@ -97,11 +95,10 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
 
   return (
     <div className="relative w-full min-h-[600px] overflow-hidden">
-      {/* Animated gradient background */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-400 via-red-500 to-pink-500 animate-gradient-shift" />
-        <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/40 via-pink-500/30 to-yellow-400/40 animate-gradient-drift" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/20 to-purple-900/30" />
+      <div className="absolute inset-0 rounded-full">
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-400 via-red-500 to-pink-500 animate-gradient-shift rounded-full" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/40 via-pink-500/30 to-yellow-400/40 animate-gradient-drift rounded-full" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/20 to-purple-900/30 rounded-full" />
       </div>
 
       {/* Sunset orb effect */}
@@ -110,24 +107,14 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
         <div className="absolute inset-8 rounded-full bg-gradient-to-br from-yellow-200 via-orange-300 to-pink-400 blur-2xl opacity-70" />
       </div>
 
-      {/* Cloud-like decorative elements */}
-      <div className="absolute top-20 left-10 w-32 h-16 bg-white/10 rounded-full blur-2xl animate-float-slow" />
-      <div className="absolute top-32 right-20 w-48 h-20 bg-purple-300/20 rounded-full blur-3xl animate-float-delayed" />
-      <div className="absolute bottom-20 left-1/3 w-40 h-16 bg-pink-300/20 rounded-full blur-2xl animate-float-slow" />
-
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-[600px] px-6 py-12">
+      <div className="max-w-md w-full mx-auto relative z-10 items-center justify-center min-h-[600px] px-6 py-12">
         <div className="text-center max-w-4xl mx-auto">
-
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 animate-fade-in-up">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-100 via-orange-100 to-purple-100">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 via-red-300 to-purple-900">
               Calculate Sunset Beauty
             </span>
           </h1>
-          
-          <p className="text-xl md:text-2xl text-white/90 mb-8 animate-fade-in-up animation-delay-200">
-            Discover the perfect moments when the sky transforms into a masterpiece of colors
-          </p>
 
           {/* Location selector */}
           <div className="mb-8 inline-block">
@@ -136,32 +123,20 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
                 onClick={() => setShowLocationDropdown(!showLocationDropdown)}
                 className="flex items-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-md rounded-full text-white border border-white/30 hover:bg-white/30 transition-all duration-300"
               >
-                <svg 
-                  className="w-5 h-5" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" 
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
                   />
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" 
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span className="font-medium">
-                  {isLoadingLocation ? 'Detecting location...' : location}
-                </span>
-                <svg 
-                  className={`w-4 h-4 transition-transform ${showLocationDropdown ? 'rotate-180' : ''}`} 
-                  fill="none" 
-                  stroke="currentColor" 
+                <span className="font-medium">{isLoadingLocation ? 'Detecting location...' : location}</span>
+                <svg
+                  className={`w-4 h-4 transition-transform ${showLocationDropdown ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -170,7 +145,7 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
 
               {/* Dropdown menu */}
               {showLocationDropdown && (
-                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-64 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/50 overflow-hidden">
+                <div className="absolute -z-40 top-full mt-2 left-1/2 -translate-x-1/2 w-64 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/50 overflow-hidden">
                   <div className="p-2">
                     <button
                       onClick={getUserLocation}
@@ -178,13 +153,18 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
                       disabled={isLoadingLocation}
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                        />
                       </svg>
                       Use my current location
                     </button>
-                    
+
                     <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent my-2" />
-                    
+
                     <div className="max-h-48 overflow-y-auto">
                       {popularLocations.map((loc) => (
                         <button
@@ -196,9 +176,9 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
                         </button>
                       ))}
                     </div>
-                    
+
                     <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent my-2" />
-                    
+
                     <form onSubmit={handleCustomLocationSubmit} className="p-2">
                       <input
                         type="text"
@@ -215,23 +195,16 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
           </div>
 
           {/* FlipCard - Only visible after location is set */}
-          <div className="mt-8">
-            <FlipCard 
-              isVisible={hasLocationBeenSet && !isLoadingLocation} 
-              location={location}
-            />
+          <div className="mt-8 z-8">
+            <FlipCard isVisible={hasLocationBeenSet && !isLoadingLocation} location={location} />
           </div>
-
         </div>
       </div>
 
       {/* Bottom wave decoration */}
       <div className="absolute bottom-0 left-0 right-0">
         <svg className="w-full h-24" viewBox="0 0 1440 100" preserveAspectRatio="none">
-          <path 
-            d="M0,50 C360,100 720,0 1440,50 L1440,100 L0,100 Z" 
-            fill="rgba(255,255,255,0.1)"
-          />
+          <path d="M0,50 C360,100 720,0 1440,50 L1440,100 L0,100 Z" fill="rgba(255,255,255,0.1)" />
         </svg>
       </div>
     </div>

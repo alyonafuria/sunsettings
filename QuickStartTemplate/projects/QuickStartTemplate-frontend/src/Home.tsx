@@ -7,9 +7,11 @@ import ConnectWallet from './components/ConnectWallet'
 import Transact from './components/Transact'
 import NFTmint from './components/NFTmint'
 import Tokenmint from './components/Tokenmint'
+import PhotoUpload from './components/PhotoUpload'
 
 // Smart contract demo modal (backend app calls)
 import AppCalls from './components/AppCalls'
+import MapFullScreen from './components/MapFullScreen'
 
 interface HomeProps {}
 
@@ -19,6 +21,8 @@ const Home: React.FC<HomeProps> = () => {
   const [openMintModal, setOpenMintModal] = useState<boolean>(false)
   const [openTokenModal, setOpenTokenModal] = useState<boolean>(false)
   const [openAppCallsModal, setOpenAppCallsModal] = useState<boolean>(false)
+  const [openMap, setOpenMap] = useState<boolean>(false)
+  const [openUploadModal, setOpenUploadModal] = useState<boolean>(false)
 
   const { activeAddress } = useWallet()
 
@@ -56,6 +60,13 @@ const Home: React.FC<HomeProps> = () => {
               <button className="btn" onClick={() => setOpenAppCallsModal(true)}>
                 Contract Interactions Demo
               </button>
+
+              <button className="btn btn-outline" onClick={() => setOpenMap(true)}>
+                Open Map
+              </button>
+              <button className="btn btn-warning" onClick={() => setOpenUploadModal(true)}>
+                Upload Photo
+              </button>
             </>
           )}
         </div>
@@ -68,6 +79,8 @@ const Home: React.FC<HomeProps> = () => {
         <Tokenmint openModal={openTokenModal} setModalState={setOpenTokenModal} />
 
         <AppCalls openModal={openAppCallsModal} setModalState={setOpenAppCallsModal} />
+        <MapFullScreen open={openMap} onClose={() => setOpenMap(false)} />
+        <PhotoUpload openModal={openUploadModal} setModalState={setOpenUploadModal} />
       </div>
     </div>
   )

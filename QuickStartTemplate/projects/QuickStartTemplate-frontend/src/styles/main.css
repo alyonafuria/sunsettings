@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global font override */
+@layer base {
+  html {
+    font-family: 'Faculty Glyphic', serif;
+  }
+  
+  body {
+    font-family: 'Faculty Glyphic', serif;
+  }
+  
+  input, textarea, select, button {
+    font-family: 'Faculty Glyphic', serif;
+  }
+}
+
 /* Custom utility classes for 3D flip card */
 @layer utilities {
   .perspective-1000 {

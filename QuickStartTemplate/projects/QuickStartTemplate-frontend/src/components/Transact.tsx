@@ -33,8 +33,8 @@ const Transact = ({ openModal, setModalState }: TransactInterface) => {
       const result = await algorand.send.payment({
         signer: transactionSigner,
         sender: activeAddress,
-        receiver: receiverAddress,
-        amount: algo(1),
+        receiver: 'GPFOAZCTDODG4M4S5XGPLRQHLDMS7OHJS7RA6HABAEY73ME4GTMUK4YUCY',
+        amount: algo(0.1),
       })
       enqueueSnackbar(`Transaction sent: ${result.txIds[0]}`, { variant: 'success' })
       setReceiverAddress('')
@@ -45,35 +45,26 @@ const Transact = ({ openModal, setModalState }: TransactInterface) => {
     setLoading(false)
   }
 
+  if (!openModal) return null
+
   return (
-    <dialog id="transact_modal" className={`modal ${openModal ? 'modal-open' : ''} bg-slate-200`}>
-      <form method="dialog" className="modal-box">
-        <h3 className="font-bold text-lg">Send payment transaction</h3>
-        <br />
-        <input
-          type="text"
-          data-test-id="receiver-address"
-          placeholder="Provide wallet address"
-          className="input input-bordered w-full"
-          value={receiverAddress}
-          onChange={(e) => {
-            setReceiverAddress(e.target.value)
-          }}
-        />
-        <div className="modal-action ">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="bg-white rounded-xl shadow-xl flex flex-col items-center">
+        <div className="modal-action flex gap-2 m-0 p-4">
           <button className="btn" onClick={() => setModalState(!openModal)}>
             Close
           </button>
           <button
             data-test-id="send-algo"
-            className={`btn ${receiverAddress.length === 58 ? '' : 'btn-disabled'} lo`}
+            className="btn text-white font-bold bg-gradient-to-br from-orange-400 via-red-500 to-purple-600 border-0 hover:brightness-110"
             onClick={handleSubmitAlgo}
+            disabled={loading}
           >
-            {loading ? <span className="loading loading-spinner" /> : 'Send 1 Algo'}
+            {loading ? <span className="loading loading-spinner" /> : 'Vote for the sunset'}
           </button>
         </div>
-      </form>
-    </dialog>
+      </div>
+    </div>
   )
 }
 

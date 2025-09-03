@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useState } from 'react'
+import Transact from './Transact'
 
 interface LeaderboardEntry {
   id: number
@@ -11,6 +12,8 @@ interface LeaderboardEntry {
 const sunsetPlaceholder: string = 'https://thumbs.dreamstime.com/b/serene-landscape-small-island-lone-tree-sunset-artificial-intelligence-generated-east-asian-artwork-368347650.jpg';
 
 const Leaderboard: React.FC = () => {
+  const [openPaymentModalId, setOpenPaymentModalId] = useState<number | null>(null)
+
   // Mock data for leaderboard entries
   const mockLeaderboard: LeaderboardEntry[] = [
     {
@@ -146,7 +149,7 @@ const Leaderboard: React.FC = () => {
                 {/* User Info and Stats */}
                 <div className="flex-grow">
                   <div className="flex items-center gap-3 mb-1">
-                    
+
                     {/* Username */}
                     <span className="font-semibold text-gray-800">
                       {entry.username}
@@ -169,7 +172,7 @@ const Leaderboard: React.FC = () => {
                   <div className="flex items-center gap-6 text-sm">
                     {/* Likes */}
                     <div className="flex items-center gap-1">
-                      <svg 
+                      <svg
                         className="w-4 h-4 text-red-500 fill-current"
                         viewBox="0 0 24 24"
                       >
@@ -179,17 +182,27 @@ const Leaderboard: React.FC = () => {
                         {formatLikes(entry.likes)}
                       </span>
                     </div>
-
-
+                  </div>
+                  {/* Payment button for this entry */}
+                  <div className="mt-2">
+                    <button
+                      className="btn btn-xs btn-accent"
+                      onClick={() => setOpenPaymentModalId(entry.id)}
+                    >
+                      Vote
+                    </button>
                   </div>
                 </div>
-
-                
               </div>
             </div>
           ))}
         </div>
-
+        {/* Render Transact modal once, for the selected entry */}
+        <Transact
+          openModal={openPaymentModalId !== null}
+          setModalState={() => setOpenPaymentModalId(null)}
+          // Optionally pass entry info here if Transact supports it
+        />
         {/* Load More Button */}
         <div className="text-center mt-8">
           <button className="px-6 py-2 bg-white/20 backdrop-blur-md text-white font-medium rounded-full border border-white/30 hover:bg-white/30 transform hover:scale-105 transition-all duration-300">

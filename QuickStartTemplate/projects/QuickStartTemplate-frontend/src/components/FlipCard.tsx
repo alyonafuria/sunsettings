@@ -24,7 +24,7 @@ const FlipCard: React.FC<FlipCardProps> = ({ isVisible, location }) => {
   }
 
   return (
-    <div className="perspective-1000 w-80 h-48 mx-auto animate-fade-in-up animation-delay-600">
+    <div className="perspective-1000 w-full h-48 max-w-md mx-auto animate-fade-in-up animation-delay-600">
       <div
         className={`relative w-full h-full transition-transform duration-700 transform-style-preserve-3d cursor-pointer ${
           isFlipped ? 'rotate-y-180' : ''
@@ -35,12 +35,8 @@ const FlipCard: React.FC<FlipCardProps> = ({ isVisible, location }) => {
         <div className="absolute w-full h-full backface-hidden">
           <div className="w-full h-full bg-gradient-to-br from-yellow-400/90 via-orange-500/90 to-pink-500/90 backdrop-blur-md rounded-2xl shadow-2xl p-6 flex flex-col justify-center items-center border border-white/30">
             <div className="text-white text-center">
-              <div className="text-sm font-medium mb-2 opacity-90">
-                Today in {location}
-              </div>
-              <div className="text-3xl font-bold mb-3">
-                Sunset Quality
-              </div>
+              <div className="text-sm font-medium mb-2 opacity-90">Today in {location}</div>
+              <div className="text-3xl font-bold mb-3">Sunset Quality</div>
               <div className="relative">
                 <div className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-yellow-200 to-yellow-100">
                   {getProbability()}%
@@ -51,9 +47,6 @@ const FlipCard: React.FC<FlipCardProps> = ({ isVisible, location }) => {
                   </svg>
                 </div>
               </div>
-              <div className="text-sm mt-3 opacity-90">
-                Click to learn more
-              </div>
             </div>
           </div>
         </div>
@@ -62,18 +55,10 @@ const FlipCard: React.FC<FlipCardProps> = ({ isVisible, location }) => {
         <div className="absolute w-full h-full backface-hidden rotate-y-180">
           <div className="w-full h-full bg-gradient-to-br from-purple-500/90 via-pink-500/90 to-orange-500/90 backdrop-blur-md rounded-2xl shadow-2xl p-6 flex flex-col justify-center border border-white/30">
             <div className="text-white">
-              <h3 className="text-2xl font-bold mb-3 text-center">
-                Tonight's Sunset
-              </h3>
               <p className="text-sm leading-relaxed opacity-95">
-                The golden hour approaches with perfect conditions. Clear skies and scattered clouds create an ideal canvas for nature's daily masterpiece. 
+                The golden hour approaches with perfect conditions. Clear skies and scattered clouds create an ideal canvas for nature's
+                daily masterpiece.
               </p>
-              <p className="text-sm leading-relaxed mt-2 opacity-95">
-                Expect vibrant oranges melting into deep purples as the sun kisses the horizon. The magic begins 30 minutes before sunset.
-              </p>
-              <div className="mt-4 text-center">
-                <span className="text-xs opacity-80">Click to flip back</span>
-              </div>
             </div>
           </div>
         </div>

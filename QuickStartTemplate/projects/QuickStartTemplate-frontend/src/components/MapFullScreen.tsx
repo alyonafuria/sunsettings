@@ -109,11 +109,14 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
       const img = document.createElement('img')
       img.src = `https://tan-mad-gorilla-689.mypinata.cloud/ipfs/${photoMarker.ipfsHash}`
       img.alt = photoMarker.name
-      img.style.cssText = `
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      `
+      img.style.width = '100%'
+      img.style.height = '100%'
+      img.style.objectFit = 'cover'
+
+      img.onload = () => {
+        // append the image after it’s loaded
+        if (!el.contains(img)) el.appendChild(img)
+      }
 
       img.onerror = () => {
         console.error('Failed to load image:', img.src)
@@ -126,9 +129,9 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
         el.style.justifyContent = 'center'
       }
 
-      img.onload = () => {
-        console.log('Image loaded successfully:', img.src)
-      }
+      // Placehplder for a marker during the img load to avoid async UI flickers:
+      const mapMarker = new mapboxgl.Marker(el).setLngLat(photoMarker.coordinates).addTo(mapRef.current!)
+      markersRef.current.push(mapMarker)
 
       el.appendChild(img)
 

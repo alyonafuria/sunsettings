@@ -4,10 +4,18 @@ import React, { useEffect, useRef, useState } from 'react'
 import FlipCard from './FlipCard'
 import PhotoUpload from './PhotoUpload'
 
+interface PhotoMarker {
+  id: string
+  coordinates: [number, number]
+  ipfsHash: string
+  name: string
+  timestamp: string
+}
+
 interface MapFullScreenProps {
   open: boolean
   onClose: () => void
-  center?: [number, number]        // lng, lat
+  center?: [number, number] // lng, lat
   location: string
   probability?: number | null
   description?: string
@@ -33,7 +41,7 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
   description,
   loading,
   error,
-  onRefresh
+  onRefresh,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
@@ -41,6 +49,126 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
   const [showCard, setShowCard] = useState(true)
   const locationLabel = center ? `${center[1].toFixed(4)}, ${center[0].toFixed(4)}` : 'Berlin'
   const [openUploadModal, setOpenUploadModal] = useState<boolean>(false)
+  const [photoMarkers, setPhotoMarkers] = useState<PhotoMarker[]>([
+    {
+      id: 'test-marker',
+      coordinates: [13.405, 52.52],
+      ipfsHash: 'bafkreihp52znq3lewre7mmerah5g7tnrmbwrjx4zp3ywmol2e7cjo3gsdi',
+      name: 'Test Photo',
+      timestamp: new Date().toISOString(),
+    },
+  ])
+  const markersRef = useRef<mapboxgl.Marker[]>([])
+
+  const handlePhotoUploaded = (ipfsHash: string, fileName: string) => {
+    // TODO: replace random lat, long generation with the metadata fetch (from the photo uploaded)
+    const lng = 13.0884 + Math.random() * (13.7612 - 13.0884)
+    const lat = 52.3383 + Math.random() * (52.6755 - 52.3383)
+
+    const newMarker: PhotoMarker = {
+      id: Date.now().toString(),
+      coordinates: [lng, lat],
+      ipfsHash,
+      name: fileName,
+      timestamp: new Date().toISOString(),
+    }
+
+    setPhotoMarkers((prev) => [...prev, newMarker])
+  }
+
+  const clearMarkers = () => {
+    markersRef.current.forEach((marker) => marker.remove())
+    markersRef.current = []
+  }
+
+  const addPhotoMarkers = () => {
+    if (!mapRef.current) return
+
+    console.log('Adding photo markers:', photoMarkers.length)
+    clearMarkers()
+
+    photoMarkers.forEach((photoMarker) => {
+      console.log('Creating marker for:', photoMarker)
+      const el = document.createElement('div')
+      el.className = 'photo-marker'
+      el.style.cssText = `
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        border: 3px solid #ff6b35;
+        overflow: hidden;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        transition: transform 0.2s;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `
+
+      const img = document.createElement('img')
+      img.src = `https://tan-mad-gorilla-689.mypinata.cloud/ipfs/${photoMarker.ipfsHash}`
+      img.alt = photoMarker.name
+      img.style.cssText = `
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      `
+
+      img.onerror = () => {
+        console.error('Failed to load image:', img.src)
+        // Show a placeholder if image fails to load
+        el.innerHTML = '📷'
+        el.style.fontSize = '24px'
+        el.style.color = '#ff6b35'
+        el.style.display = 'flex'
+        el.style.alignItems = 'center'
+        el.style.justifyContent = 'center'
+      }
+
+      img.onload = () => {
+        console.log('Image loaded successfully:', img.src)
+      }
+
+      el.appendChild(img)
+
+      el.addEventListener('mouseenter', () => {
+        el.style.transform = 'scale(1.1)'
+      })
+
+      el.addEventListener('mouseleave', () => {
+        el.style.transform = 'scale(1)'
+      })
+
+      el.addEventListener('click', () => {
+        const popup = new mapboxgl.Popup({ offset: 25 })
+          .setLngLat(photoMarker.coordinates)
+          .setHTML(
+            `
+            <div style="max-width: 200px;">
+              <img 
+                src="https://tan-mad-gorilla-689.mypinata.cloud/ipfs/${photoMarker.ipfsHash}" 
+                alt="${photoMarker.name}"
+                style="width: 100%; border-radius: 8px; margin-bottom: 8px;"
+              />
+              <p style="margin: 0; font-size: 12px; color: #666;">
+                ${photoMarker.name}
+              </p>
+              <p style="margin: 4px 0 0 0; font-size: 10px; color: #999;">
+                ${new Date(photoMarker.timestamp).toLocaleString()}
+              </p>
+            </div>
+          `,
+          )
+          .addTo(mapRef.current!)
+      })
+
+      const marker = new mapboxgl.Marker(el).setLngLat(photoMarker.coordinates).addTo(mapRef.current!)
+
+      markersRef.current.push(marker)
+    })
+  }
+
   const lastCenterRef = useRef<[number, number] | null>(null)
 
   useEffect(() => {
@@ -185,24 +313,33 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
       })
     }
 
-    mapRef.current.on('style.load', applyHighContrastBW)
+    mapRef.current.on('style.load', () => {
+      applyHighContrastBW()
+      // Add markers after style loads
+      setTimeout(() => addPhotoMarkers(), 100)
+    })
     mapRef.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
 
     return () => {
+      clearMarkers()
       mapRef.current?.remove()
       mapRef.current = null
       if (mapContainerRef.current) mapContainerRef.current.innerHTML = ''
     }
   }, [open, center])
 
+  useEffect(() => {
+    console.log('PhotoMarkers useEffect triggered:', photoMarkers.length, !!mapRef.current)
+    if (mapRef.current) {
+      addPhotoMarkers()
+    }
+  }, [photoMarkers])
+
   // NEW effect to fly when center changes after initial load
   useEffect(() => {
     if (!open || !mapRef.current || !center) return
     const prev = lastCenterRef.current
-    const changed =
-      !prev ||
-      Math.abs(prev[0] - center[0]) > 0.0001 ||
-      Math.abs(prev[1] - center[1]) > 0.0001
+    const changed = !prev || Math.abs(prev[0] - center[0]) > 0.0001 || Math.abs(prev[1] - center[1]) > 0.0001
     if (changed) {
       mapRef.current.flyTo({ center, essential: true, zoom: Math.max(mapRef.current.getZoom(), 10) })
       lastCenterRef.current = center
@@ -218,7 +355,7 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
         <div className="flex items-center gap-2">
           <button
             className="px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white hover:bg-white/30 transition"
-            onClick={() => setShowCard(s => !s)}
+            onClick={() => setShowCard((s) => !s)}
           >
             {showCard ? 'Hide Card' : 'Show Card'}
           </button>
@@ -265,12 +402,12 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
               Upload Photo
             </button>
           </div>
-          <PhotoUpload openModal={openUploadModal} setModalState={setOpenUploadModal} />
+          <PhotoUpload openModal={openUploadModal} setModalState={setOpenUploadModal} onPhotoUploaded={handlePhotoUploaded} />
 
           <FlipCard
             isVisible={true}
             location={location || 'Unknown'}
-            probability={probability}  // direct prop
+            probability={probability} // direct prop
             description={description}
             loading={loading}
             error={error || null}

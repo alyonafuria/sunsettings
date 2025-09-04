@@ -9,7 +9,8 @@ interface LeaderboardEntry {
   rank: number
 }
 
-const sunsetPlaceholder: string = 'https://thumbs.dreamstime.com/b/serene-landscape-small-island-lone-tree-sunset-artificial-intelligence-generated-east-asian-artwork-368347650.jpg';
+const sunsetPlaceholder: string =
+  'https://thumbs.dreamstime.com/b/serene-landscape-small-island-lone-tree-sunset-artificial-intelligence-generated-east-asian-artwork-368347650.jpg'
 
 const Leaderboard: React.FC = () => {
   const [openPaymentModalId, setOpenPaymentModalId] = useState<number | null>(null)
@@ -21,71 +22,71 @@ const Leaderboard: React.FC = () => {
       username: 'MKZTQW...7XFA',
       postImage: sunsetPlaceholder,
       likes: 15234,
-      rank: 1
+      rank: 1,
     },
     {
       id: 2,
       username: 'LQNRDV...PZ3M',
       postImage: sunsetPlaceholder,
       likes: 12891,
-      rank: 2
+      rank: 2,
     },
     {
       id: 3,
       username: 'XWJH6C...K5U',
       postImage: sunsetPlaceholder,
       likes: 11567,
-      rank: 3
+      rank: 3,
     },
     {
       id: 4,
       username: 'TRG7PQ...M2NL',
       postImage: sunsetPlaceholder,
       likes: 10234,
-      rank: 4
+      rank: 4,
     },
     {
       id: 5,
       username: 'ZF4YQX...H9VA',
       postImage: sunsetPlaceholder,
       likes: 9876,
-      rank: 5
+      rank: 5,
     },
     {
       id: 6,
       username: 'BQ2LNS...7KEG',
       postImage: sunsetPlaceholder,
       likes: 8543,
-      rank: 6
+      rank: 6,
     },
     {
       id: 7,
       username: 'HCMX5R...QYUT',
       postImage: sunsetPlaceholder,
       likes: 7892,
-      rank: 7
+      rank: 7,
     },
     {
       id: 8,
       username: 'PWJ3KZ...D6RF',
       postImage: sunsetPlaceholder,
       likes: 6754,
-      rank: 8
+      rank: 8,
     },
     {
       id: 9,
       username: 'KUV2QA...T3LP',
       postImage: sunsetPlaceholder,
       likes: 5432,
-      rank: 9
+      rank: 9,
     },
     {
       id: 10,
       username: 'hSY2DB...R3TV',
       postImage: sunsetPlaceholder,
       likes: 4567,
-      rank: 10
-    }
+      rank: 10,
+    },
   ]
 
   const formatLikes = (likes: number): string => {
@@ -98,7 +99,7 @@ const Leaderboard: React.FC = () => {
   }
 
   const getRankBadge = (rank: number) => {
-    switch(rank) {
+    switch (rank) {
       case 1:
         return '🥇'
       case 2:
@@ -115,83 +116,53 @@ const Leaderboard: React.FC = () => {
       <div className="container mx-auto px-4 py-6">
         {/* Page Title */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">
+          <h1 className="text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-700 to-yellow-700">
             Sunset Leaderboard
           </h1>
         </div>
 
         {/* Leaderboard List */}
-        <div className="max-w-4xl mx-auto space-y-3">
+        <div className="max-w-md w-full mx-auto space-y-3">
           {mockLeaderboard.map((entry) => (
             <div
               key={entry.id}
-              className={`bg-white/95 backdrop-blur-lg rounded-xl overflow-hidden shadow-lg hover:shadow-xl transform transition-all duration-300 ${
+              className={`bg-orange-200 backdrop-blur-lg rounded-xl overflow-hidden shadow-lg hover:shadow-xl transform transition-all duration-300 ${
                 entry.rank <= 3 ? 'ring-2 ring-yellow-400/50' : ''
               }`}
             >
               <div className="flex items-center p-3 gap-4">
                 {/* Rank Badge */}
                 <div className="flex-shrink-0 w-12 text-center">
-                  <div className="text-2xl font-bold">
-                    {getRankBadge(entry.rank)}
-                  </div>
+                  <div className="text-2xl font-bold">{getRankBadge(entry.rank)}</div>
                 </div>
 
                 {/* Post Image Thumbnail */}
                 <div className="flex-shrink-0">
-                  <img
-                    src={entry.postImage}
-                    alt={`Sunset by ${entry.username}`}
-                    className="w-20 h-20 object-cover rounded-lg"
-                  />
+                  <img src={entry.postImage} alt={`Sunset by ${entry.username}`} className="w-20 h-20 object-cover rounded-lg" />
                 </div>
 
                 {/* User Info and Stats */}
                 <div className="flex-grow">
                   <div className="flex items-center gap-3 mb-1">
-
                     {/* Username */}
-                    <span className="font-semibold text-gray-800">
-                      {entry.username}
-                    </span>
-
-                    {/* Top post badge for #1 */}
-                    {entry.rank === 1 && (
-                      <span className="text-xs bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-2 py-0.5 rounded-full">
-                        READY TO MINT
-                      </span>
-                    )}
+                    <span className="font-semibold text-gray-800">{entry.username}</span>
                   </div>
-
-                  {/* Caption preview */}
-                  <p className="text-sm text-gray-600 mb-1">
-                    Beautiful sunset captured today! 🌅
-                  </p>
-
                   {/* Stats row */}
                   <div className="flex items-center gap-6 text-sm">
                     {/* Likes */}
                     <div className="flex items-center gap-1">
-                      <svg
-                        className="w-4 h-4 text-red-500 fill-current"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                      <svg className="w-4 h-4 text-red-500 fill-current" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                       </svg>
-                      <span className="font-semibold text-gray-700">
-                        {formatLikes(entry.likes)}
-                      </span>
+                      <span className="font-semibold text-gray-700">{formatLikes(entry.likes)}</span>
                     </div>
                   </div>
-                  {/* Payment button for this entry */}
-                  <div className="mt-2">
-                    <button
-                      className="btn btn-xs btn-accent"
-                      onClick={() => setOpenPaymentModalId(entry.id)}
-                    >
-                      Vote
-                    </button>
-                  </div>
+                </div>
+                {/* Payment button for this entry */}
+                <div className="mt-2">
+                  <button className="btn btn-s btn-accent" onClick={() => setOpenPaymentModalId(entry.id)}>
+                    Vote
+                  </button>
                 </div>
               </div>
             </div>

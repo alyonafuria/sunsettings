@@ -7,6 +7,7 @@ import PhotoUpload from './PhotoUpload'
 interface MapFullScreenProps {
   open: boolean
   onClose: () => void
+  location: string
   center?: [number, number]
 }
 
@@ -18,11 +19,10 @@ if (!MAPBOX_TOKEN) {
 
 mapboxgl.accessToken = MAPBOX_TOKEN
 
-const BASE_BW_STYLE = 'mapbox://styles/mapbox/light-v11'
-
-const MapFullScreen: React.FC<MapFullScreenProps> = ({ open, onClose, center }) => {
+const MapFullScreen: React.FC<MapFullScreenProps> = ({ open, onClose, location, center }) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
+  const BASE_BW_STYLE = 'mapbox://styles/mapbox/light-v11'
   const [showCard, setShowCard] = useState(true)
   const locationLabel = center ? `${center[1].toFixed(4)}, ${center[0].toFixed(4)}` : 'Berlin'
   const [openUploadModal, setOpenUploadModal] = useState<boolean>(false)
@@ -40,7 +40,7 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({ open, onClose, center }) 
     mapRef.current = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: BASE_BW_STYLE,
-      center: center || [13.4050, 52.5200], // Berlin
+      center: center || [13.405, 52.52], // Berlin
       zoom: 10,
     })
 
@@ -61,11 +61,11 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({ open, onClose, center }) 
       const TEXT = '#000000'
       const ICON = '#111111'
 
-      layers.forEach(l => {
+      layers.forEach((l) => {
         const { id, type } = l
         try {
           // Background
-            if (type === 'background') {
+          if (type === 'background') {
             map.setPaintProperty(id, 'background-color', LAND)
           }
 
@@ -149,25 +149,18 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({ open, onClose, center }) 
           }
 
           // Desaturate where possible
-          const saturationProps = [
-            'fill-saturation',
-            'line-saturation',
-            'background-saturation',
-            'circle-saturation',
-            'symbol-saturation'
-          ]
-          saturationProps.forEach(p => {
-            try { map.setPaintProperty(id, p as any, -1) } catch {}
+          const saturationProps = ['fill-saturation', 'line-saturation', 'background-saturation', 'circle-saturation', 'symbol-saturation']
+          saturationProps.forEach((p) => {
+            try {
+              map.setPaintProperty(id, p as any, -1)
+            } catch {}
           })
           // Remove hue/brightness variance
-          const adjustments = [
-            'fill-brightness-min',
-            'fill-brightness-max',
-            'line-brightness-min',
-            'line-brightness-max'
-          ]
-          adjustments.forEach(p => {
-            try { map.setPaintProperty(id, p as any, 0 ) } catch {}
+          const adjustments = ['fill-brightness-min', 'fill-brightness-max', 'line-brightness-min', 'line-brightness-max']
+          adjustments.forEach((p) => {
+            try {
+              map.setPaintProperty(id, p as any, 0)
+            } catch {}
           })
         } catch {}
       })
@@ -224,18 +217,16 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({ open, onClose, center }) 
       <div ref={mapContainerRef} className="flex-1" />
 
       {/* FlipCard overlay */}
-      <div className="pointer-events-none absolute inset-0 flex justify-center items-start pt-28 px-4">
+      <div className="pointer-events-none absolute inset-0 flex justify-center items-end p-6 px-4">
         <div className="pointer-events-auto w-full max-w-md">
-          <FlipCard isVisible={showCard} location={locationLabel} />
-          <div className="mt-4 flex justify-center">
-            <button
-              className="btn btn-warning w-full"
-              onClick={() => setOpenUploadModal(true)}
-            >
+          <div className="mt-4 mb-2 flex justify-center">
+            <button className="btn btn-warning rounded-2xl w-full" onClick={() => setOpenUploadModal(true)}>
               Upload Photo
             </button>
           </div>
           <PhotoUpload openModal={openUploadModal} setModalState={setOpenUploadModal} />
+
+          <FlipCard isVisible={showCard} location={locationLabel} />
         </div>
       </div>
     </div>

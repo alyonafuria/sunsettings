@@ -131,9 +131,7 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
                   />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span className="font-medium">
-                  {isLoadingLocation ? 'Detecting location...' : location || 'Select location'}
-                </span>
+                <span className="font-medium">{isLoadingLocation ? 'Detecting location...' : location || 'Select location'}</span>
                 <svg
                   className={`w-4 h-4 transition-transform ${showLocationDropdown ? 'rotate-180' : ''}`}
                   fill="none"
@@ -194,7 +192,7 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
               )}
             </div>
           </div>
-          
+
           {/* Open Map Button - Only show when location is set */}
           {hasLocationBeenSet && location && (
             <div className="mb-6">
@@ -202,17 +200,12 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
                 onClick={() => setOpenMap(true)}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500/80 to-pink-500/80 backdrop-blur-md rounded-full text-white border border-white/30 hover:from-purple-600/90 hover:to-pink-600/90 hover:shadow-lg transition-all duration-300 transform hover:scale-105"
               >
-                <svg 
-                  className="w-5 h-5" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" 
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
                   />
                 </svg>
                 <span className="font-medium">Open Map</span>
@@ -221,7 +214,7 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
           )}
 
           {/* Map Modal */}
-          <MapFullScreen open={openMap} onClose={() => setOpenMap(false)} />
+          <MapFullScreen open={openMap} onClose={() => setOpenMap(false)} location={location} />
         </div>
       </div>
 

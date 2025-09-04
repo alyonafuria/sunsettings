@@ -49,9 +49,9 @@ const Transact = ({ openModal, setModalState }: TransactInterface) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="bg-white rounded-xl shadow-xl flex flex-col items-center">
+      <div className="bg-orange-100 rounded-xl shadow-xl flex flex-col items-center">
         <div className="modal-action flex gap-2 m-0 p-4">
-          <button className="btn" onClick={() => setModalState(!openModal)}>
+          <button className="btn bg-gray-300" onClick={() => setModalState(!openModal)}>
             Close
           </button>
           <button

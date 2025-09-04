@@ -17,6 +17,8 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
   const [sunsetDescription, setSunsetDescription] = useState<string>('')
   const [sunsetLoading, setSunsetLoading] = useState(false)
   const [sunsetError, setSunsetError] = useState<string | null>(null)
+  const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null)
+  const [weatherSummary, setWeatherSummary] = useState<string>('') // optional debug / context
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastSaltRef = useRef<string>('')
@@ -44,6 +46,7 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords
+          setCoords({ lat: latitude, lon: longitude })
 
           try {
             // Use reverse geocoding API to get location name
@@ -57,8 +60,7 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
               setLocation(locationString)
               setHasLocationBeenSet(true)
             }
-          } catch (error) {
-            console.error('Error fetching location name:', error)
+          } catch {
             setLocation('Location detected')
             setHasLocationBeenSet(true)
           } finally {
@@ -66,13 +68,10 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
             setShowLocationDropdown(false)
           }
         },
-        (error) => {
-          console.error('Error getting location:', error)
-          setIsLoadingLocation(false)
-        },
+        () => { setIsLoadingLocation(false) },
+        { enableHighAccuracy: true, timeout: 10000 }
       )
     } else {
-      console.log('Geolocation is not supported by this browser.')
       setIsLoadingLocation(false)
     }
   }
@@ -86,23 +85,92 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
     }, 1000)
   }, [])
 
-  const handleLocationSelect = (selectedLocation: string) => {
+  const handleLocationSelect = async (selectedLocation: string) => {
     setLocation(selectedLocation)
     setHasLocationBeenSet(true)
     setShowLocationDropdown(false)
     setCustomLocation('')
+    const geo = await geocodeLocation(selectedLocation)
+    if (geo) setCoords(geo)
   }
 
-  const handleCustomLocationSubmit = (e: React.FormEvent) => {
+  const handleCustomLocationSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (customLocation.trim()) {
       setLocation(customLocation)
       setHasLocationBeenSet(true)
       setShowLocationDropdown(false)
+      const geo = await geocodeLocation(customLocation.trim())
+      if (geo) setCoords(geo)
       setCustomLocation('')
     }
   }
 
+  const geocodeLocation = async (loc: string): Promise<{ lat: number; lon: number } | null> => {
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(loc)}`
+      const res = await fetch(url, { headers: { 'Accept-Language': 'en' } })
+      if (!res.ok) return null
+      const data = await res.json()
+      if (Array.isArray(data) && data.length > 0) {
+        const first = data[0]
+        return { lat: parseFloat(first.lat), lon: parseFloat(first.lon) }
+      }
+    } catch {}
+    return null
+  }
+
+  const fetchHourlyWeather = async (lat: number, lon: number): Promise<string> => {
+    try {
+      const today = new Date()
+      const dateParam = today.toISOString().slice(0, 10) // YYYY-MM-DD
+      // Bright Sky: if we only pass date, last_date defaults to +1 day; we will filter to today
+      const weatherUrl = `https://api.brightsky.dev/weather?date=${dateParam}&lat=${lat}&lon=${lon}&tz=UTC&units=dwd`
+      const res = await fetch(weatherUrl)
+      if (!res.ok) throw new Error(`Weather HTTP ${res.status}`)
+      const json = await res.json()
+      const records: any[] = json.weather || []
+      if (!records.length) return 'No weather data.'
+      const sameDay = records.filter(r => r.timestamp?.startsWith(dateParam))
+      const sample = sameDay.length ? sameDay : records
+
+      // Focus on late afternoon / early evening hours (approx sunset window 15-22 UTC)
+      const sunsetWindow = sample.filter(r => {
+        const hour = parseInt(r.timestamp?.substring(11, 13) || '0', 10)
+        return hour >= 15 && hour <= 22
+      })
+      const targetSet = sunsetWindow.length ? sunsetWindow : sample.slice(-6)
+
+      const avg = (arr: number[]) => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null
+
+      const cloudsArr = targetSet.map(r => typeof r.cloud_cover === 'number' ? r.cloud_cover : null).filter(n => n!==null) as number[]
+      const humidArr  = targetSet.map(r => typeof r.relative_humidity === 'number' ? r.relative_humidity : null).filter(n => n!==null) as number[]
+      const tempArr   = targetSet.map(r => typeof r.temperature === 'number' ? r.temperature : null).filter(n => n!==null) as number[]
+      const precipProbArr = targetSet.map(r => typeof r.precipitation_probability === 'number' ? r.precipitation_probability : null).filter(n => n!==null) as number[]
+      const precipArr = targetSet.map(r => typeof r.precipitation === 'number' ? r.precipitation : 0)
+
+      const cloudAvg = avg(cloudsArr)
+      const humidAvg = avg(humidArr)
+      const tempAvg = avg(tempArr)
+      const precipMax = precipProbArr.length ? Math.max(...precipProbArr) : null
+      const precipSum = precipArr.reduce((a,b)=>a+(b||0),0)
+
+      // Build concise summary (<= ~220 chars)
+      const parts: string[] = []
+      if (cloudAvg !== null) parts.push(`avg_cloud:${cloudAvg.toFixed(0)}%`)
+      if (humidAvg !== null) parts.push(`avg_humidity:${humidAvg.toFixed(0)}%`)
+      if (tempAvg !== null) parts.push(`avg_temp:${tempAvg.toFixed(1)}C`)
+      if (precipMax !== null) parts.push(`precip_prob_max:${precipMax}%`)
+      if (precipSum > 0) parts.push(`precip_total:${precipSum.toFixed(1)}mm`)
+      parts.push(`hours_analyzed:${targetSet.length}`)
+
+      return parts.join('; ')
+    } catch (e: any) {
+      return 'Weather fetch failed'
+    }
+  }
+
+  // Sunset data fetch
   const fetchSunsetData = async (loc: string, force = false) => {
     if (!VITE_OPENAI_KEY || !loc) return
 
@@ -113,16 +181,50 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
       setSunsetDescription('')
     }
 
-    // Helper used twice (may retry)
+    // Ensure we have coords; if missing attempt geocode
+    let activeCoords = coords
+    if (!activeCoords) {
+      const geo = await geocodeLocation(loc)
+      if (geo) {
+        activeCoords = geo
+        setCoords(geo)
+      }
+    }
+
+    // Weather summary (only if coords)
+    let wxSummary = ''
+    if (activeCoords) {
+      wxSummary = await fetchHourlyWeather(activeCoords.lat, activeCoords.lon)
+      setWeatherSummary(wxSummary)
+    } else {
+      wxSummary = 'No coordinates available; cannot fetch weather.'
+      setWeatherSummary(wxSummary)
+    }
+
+    // Limit length to keep prompt efficient
+    const truncatedWxSummary = wxSummary.length > 220 ? wxSummary.slice(0, 220) : wxSummary
+
     const callModel = async (seed: string) => {
       const nowISO = new Date().toISOString()
+
+      // Provide clearer analytical instructions; model must base output ONLY on weather context
       const prompt = `
-Return ONLY raw JSON:
-{"probability": 0-100, "description":"<=160 chars concise poetic sunset expectation (no inner quotes)"}
-Rules:
-- Probability must be an integer 0-100.
-- Do NOT always respond with 75. Use varied values. 75 only if sunset is truly average.
-- If conditions sound potentially colorful use 80-95, dull/hazy lower, very poor <50.
+You are an analyst producing a sunset quality estimate ONLY from the provided weather features.
+
+WeatherFeatures (parsed summary, semicolon separated, may omit some):
+${truncatedWxSummary || 'avg_cloud:NA; avg_humidity:NA; avg_temp:NA; precip_prob_max:NA; precip_total:NA; hours_analyzed:NA'}
+
+Analysis rules (DO NOT output this section, just use it):
+- Ideal vivid sunset: broken/moderate clouds (30-70%) + low precipitation probability (<25%) + some humidity (35-70%) -> probability 80-95.
+- Overcast (>80% clouds) or heavy precip (precip_prob_max >60% or precip_total >2mm) -> probability 35-55 (lower if both).
+- Very clear (<10% clouds) often reduces dramatic colors -> probability 55-70 unless humidity very favorable.
+- Extremely hazy indicator: high humidity (>90%) + high clouds (>70%) + precip_prob_max>40% -> probability 30-50.
+- Probability must be INT 0-100. Avoid defaulting to 75. Vary based on metrics. Seed only breaks ties.
+- Description: <=160 chars, concise, no quotes, mention key drivers (e.g. "scattered mid clouds", "dry clear air", "high overcast dampens colors").
+
+Return ONLY compact JSON (no markdown, no backticks, no commentary):
+{"probability": <int 0-100>, "description":"<text>"}
+
 Location: ${loc}
 TimeUTC: ${nowISO}
 RandomSeed: ${seed}`.trim()
@@ -135,11 +237,11 @@ RandomSeed: ${seed}`.trim()
         },
         body: JSON.stringify({
           model: VITE_OPENAI_MODEL,
-          temperature: 0.65,
-          max_tokens: 120,
+          temperature: 0.55,
+          max_tokens: 160,
           messages: [
-            { role: 'system', content: 'Output ONLY raw JSON.' },
-            { role: 'user', content: prompt },
+            { role: 'system', content: 'Output ONLY valid JSON with keys probability (int) and description (string).' },
+            { role: 'user', content: prompt }
           ],
         }),
       })
@@ -185,22 +287,18 @@ RandomSeed: ${seed}`.trim()
             parsed = retryParsed
             prob = retryProb
           }
-        } catch {
-          // ignore retry failure
-        }
+        } catch {}
       }
 
-      // If STILL 75 (model stubborn) or null, synthesize a varied probability
       if (prob === null || prob === 75) {
-        const hash = Array.from(loc).reduce((a, c) => (a * 131 + c.charCodeAt(0)) % 1000003, 7)
-        const base = 40 + (hash % 50) // 40..89
-        const jitter = Math.floor(Math.random() * 11) // 0..10
+        const hash = Array.from(loc + wxSummary).reduce((a, c) => (a * 131 + c.charCodeAt(0)) % 1000003, 7)
+        const base = 40 + (hash % 50)
+        const jitter = Math.floor(Math.random() * 11)
         let synthetic = base + jitter
-        // Spread more to higher side occasionally
         if (synthetic < 55 && Math.random() < 0.4) synthetic += 20
         prob = Math.min(96, synthetic)
         if (!parsed.description || typeof parsed.description !== 'string') {
-          parsed.description = 'Average conditions; estimated locally (model fallback).'
+          parsed.description = 'Estimated locally from weather context.'
         }
         // eslint-disable-next-line no-console
         console.debug('[SunsetAI fallback probability]', prob)
@@ -237,7 +335,9 @@ RandomSeed: ${seed}`.trim()
 
   return (
     <div className="relative w-full min-h-screen overflow-hidden">
-      <div className="absolute inset-0 rounded-full">
+      {/* Gradient / background layers */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 rounded-full" />
         <div className="absolute inset-0 bg-gradient-to-br from-orange-400 via-red-500 to-pink-500 animate-gradient-shift rounded-full" />
         <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/40 via-pink-500/30 to-yellow-400/40 animate-gradient-drift rounded-full" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/20 to-purple-900/30 rounded-full" />
@@ -289,6 +389,7 @@ RandomSeed: ${seed}`.trim()
               {showLocationDropdown && (
                 <div className="absolute z-50 top-full mt-2 left-1/2 -translate-x-1/2 w-64 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/50 overflow-visible">
                   <div className="p-2">
+                    {/* FIXED button markup */}
                     <button
                       onClick={getUserLocation}
                       className="w-full text-left px-4 py-3 hover:bg-gradient-to-r hover:from-orange-400/20 hover:to-purple-400/20 rounded-lg transition-colors flex items-center gap-2 text-gray-700"
@@ -356,12 +457,15 @@ RandomSeed: ${seed}`.trim()
             open={openMap}
             onClose={() => setOpenMap(false)}
             location={location}
+            center={coords ? [coords.lon, coords.lat] : undefined}  // <-- added
             probability={sunsetProbability}
             description={sunsetDescription}
             loading={sunsetLoading}
             error={sunsetError || undefined}
             onRefresh={() => fetchSunsetData(location, true)}
           />
+          {/* Optional tiny debug for weather (comment out if not needed) */}
+          {/* <div className="mt-4 text-[10px] text-white/60 whitespace-pre-wrap">{weatherSummary}</div> */}
         </div>
       </div>
 

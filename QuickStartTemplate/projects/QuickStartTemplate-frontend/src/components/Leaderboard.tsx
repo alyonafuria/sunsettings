@@ -9,81 +9,78 @@ interface LeaderboardEntry {
   rank: number
 }
 
-const sunsetPlaceholder: string =
-  'https://thumbs.dreamstime.com/b/serene-landscape-small-island-lone-tree-sunset-artificial-intelligence-generated-east-asian-artwork-368347650.jpg'
-
 const Leaderboard: React.FC = () => {
   const [openPaymentModalId, setOpenPaymentModalId] = useState<number | null>(null)
 
-  // Mock data for leaderboard entries
+  // Mock data for leaderboard entries with individual images
   const mockLeaderboard: LeaderboardEntry[] = [
     {
       id: 1,
       username: 'MKZTQW...7XFA',
-      postImage: sunsetPlaceholder,
+      postImage: 'https://cdn.pixabay.com/photo/2024/01/18/10/07/sunset-8516639_1280.jpg',
       likes: 15234,
       rank: 1,
     },
     {
       id: 2,
       username: 'LQNRDV...PZ3M',
-      postImage: sunsetPlaceholder,
+      postImage: 'https://cdn.pixabay.com/photo/2022/08/10/18/57/lake-7377942_1280.jpg',
       likes: 12891,
       rank: 2,
     },
     {
       id: 3,
       username: 'XWJH6C...K5U',
-      postImage: sunsetPlaceholder,
+      postImage: 'https://cdn.pixabay.com/photo/2022/08/06/15/39/city-7368852_1280.jpg',
       likes: 11567,
       rank: 3,
     },
     {
       id: 4,
       username: 'TRG7PQ...M2NL',
-      postImage: sunsetPlaceholder,
+      postImage: 'https://cdn.pixabay.com/photo/2014/05/02/12/43/clouds-335969_1280.jpg',
       likes: 10234,
       rank: 4,
     },
     {
       id: 5,
       username: 'ZF4YQX...H9VA',
-      postImage: sunsetPlaceholder,
+      postImage: 'https://cdn.pixabay.com/photo/2022/01/03/05/45/sunset-6911736_1280.jpg',
       likes: 9876,
       rank: 5,
     },
     {
       id: 6,
       username: 'BQ2LNS...7KEG',
-      postImage: sunsetPlaceholder,
+      postImage: 'https://cdn.pixabay.com/photo/2024/12/20/18/31/sunset-9280759_1280.jpg',
       likes: 8543,
       rank: 6,
     },
     {
       id: 7,
       username: 'HCMX5R...QYUT',
-      postImage: sunsetPlaceholder,
+      postImage: 'https://cdn.pixabay.com/photo/2022/09/01/09/31/sunset-glow-7425170_1280.jpg',
       likes: 7892,
       rank: 7,
     },
     {
       id: 8,
       username: 'PWJ3KZ...D6RF',
-      postImage: sunsetPlaceholder,
+      postImage: 'https://cdn.pixabay.com/photo/2016/09/01/19/43/sunset-1637376_1280.jpg',
       likes: 6754,
       rank: 8,
     },
     {
       id: 9,
       username: 'KUV2QA...T3LP',
-      postImage: sunsetPlaceholder,
+      postImage: 'https://cdn.pixabay.com/photo/2015/08/30/11/16/sunset-914148_1280.jpg',
       likes: 5432,
       rank: 9,
     },
     {
       id: 10,
       username: 'hSY2DB...R3TV',
-      postImage: sunsetPlaceholder,
+      postImage: 'https://cdn.pixabay.com/photo/2013/08/26/09/40/silhouette-175970_1280.jpg',
       likes: 4567,
       rank: 10,
     },
@@ -186,3 +183,6 @@ const Leaderboard: React.FC = () => {
 }
 
 export default Leaderboard
+
+
+

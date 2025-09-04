@@ -24,7 +24,7 @@ const FlipCard: React.FC<FlipCardProps> = ({ isVisible, location }) => {
   }
 
   return (
-    <div className="perspective-1000 w-full h-48 max-w-md mx-auto animate-fade-in-up animation-delay-600">
+    <div className="perspective-1000 w-full h-48 mx-auto animate-fade-in-up animation-delay-600">
       <div
         className={`relative w-full h-full transition-transform duration-700 transform-style-preserve-3d cursor-pointer ${
           isFlipped ? 'rotate-y-180' : ''

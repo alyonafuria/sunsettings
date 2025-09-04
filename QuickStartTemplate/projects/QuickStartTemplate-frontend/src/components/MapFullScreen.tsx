@@ -7,7 +7,7 @@ import PhotoUpload from './PhotoUpload'
 interface MapFullScreenProps {
   open: boolean
   onClose: () => void
-  center?: [number, number]
+  center?: [number, number]        // lng, lat
   location: string
   probability?: number | null
   description?: string
@@ -41,6 +41,7 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
   const [showCard, setShowCard] = useState(true)
   const locationLabel = center ? `${center[1].toFixed(4)}, ${center[0].toFixed(4)}` : 'Berlin'
   const [openUploadModal, setOpenUploadModal] = useState<boolean>(false)
+  const lastCenterRef = useRef<[number, number] | null>(null)
 
   useEffect(() => {
     if (!open || !mapContainerRef.current) return
@@ -55,9 +56,12 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
     mapRef.current = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: BASE_BW_STYLE,
-      center: center || [13.405, 52.52], // Berlin
+      center: center || [13.405, 52.52], // use provided center or fallback (Berlin)
       zoom: 10,
     })
+    if (center) {
+      lastCenterRef.current = center
+    }
 
     const applyHighContrastBW = () => {
       if (!mapRef.current) return
@@ -190,6 +194,20 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
       if (mapContainerRef.current) mapContainerRef.current.innerHTML = ''
     }
   }, [open, center])
+
+  // NEW effect to fly when center changes after initial load
+  useEffect(() => {
+    if (!open || !mapRef.current || !center) return
+    const prev = lastCenterRef.current
+    const changed =
+      !prev ||
+      Math.abs(prev[0] - center[0]) > 0.0001 ||
+      Math.abs(prev[1] - center[1]) > 0.0001
+    if (changed) {
+      mapRef.current.flyTo({ center, essential: true, zoom: Math.max(mapRef.current.getZoom(), 10) })
+      lastCenterRef.current = center
+    }
+  }, [center, open])
 
   if (!open) return null
   return (

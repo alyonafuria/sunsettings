@@ -454,6 +454,7 @@ RandomSeed: ${seed}`.trim()
             open={openMap}
             onClose={() => setOpenMap(false)}
             location={location}
+            center={coords ? [coords.lon, coords.lat] : undefined}  // <-- added
             probability={sunsetProbability}
             description={sunsetDescription}
             loading={sunsetLoading}

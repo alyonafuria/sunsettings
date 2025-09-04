@@ -4,7 +4,7 @@ This is a project for the [Algorand hackathon: AI meets Blockchain](https://luma
 
 The project is a full-stack decentralized application built on Algorand that calculates sunset beauty probability using AI-powered weather analysis and features an interactive map interface with photo sharing capabilities.
 
-The demo of this web app is deployed [here](https://sunsetting.vercel.app/) to Vercel.
+The demo of this web app is deployed [here](https://sunsettings.vercel.app/) to Vercel.
 
 ## Project Overview
 

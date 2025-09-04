@@ -33,7 +33,7 @@ const Header: React.FC<HeaderProps> = () => {
             {/* Logo/Brand */}
             <div className="flex items-center cursor-pointer" onClick={() => handleNavigation('/')}>
               <h1 className="text-2xl font-bold text-white">
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-200 to-pink-200">Sunsetting</span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-200 to-pink-200">Sunsettings</span>
               </h1>
             </div>
 

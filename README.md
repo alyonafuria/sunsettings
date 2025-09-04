@@ -91,3 +91,5 @@ The project supports automated deployment via GitHub Actions:
 
 Built with https://github.com/algorandfoundation/algokit-cli • Algorand Blockchain • React • TypeScript
 
+This project is licensed under the Apache License 2.0. 
+

@@ -7,8 +7,13 @@ import PhotoUpload from './PhotoUpload'
 interface MapFullScreenProps {
   open: boolean
   onClose: () => void
-  location: string
   center?: [number, number]
+  location: string
+  probability?: number | null
+  description?: string
+  loading?: boolean
+  error?: string
+  onRefresh?: () => void
 }
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
@@ -19,7 +24,17 @@ if (!MAPBOX_TOKEN) {
 
 mapboxgl.accessToken = MAPBOX_TOKEN
 
-const MapFullScreen: React.FC<MapFullScreenProps> = ({ open, onClose, location, center }) => {
+const MapFullScreen: React.FC<MapFullScreenProps> = ({
+  open,
+  onClose,
+  center,
+  location,
+  probability,
+  description,
+  loading,
+  error,
+  onRefresh
+}) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const BASE_BW_STYLE = 'mapbox://styles/mapbox/light-v11'
@@ -177,7 +192,6 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({ open, onClose, location, 
   }, [open, center])
 
   if (!open) return null
-
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-sm" role="dialog" aria-modal="true">
       {/* Header bar */}
@@ -186,10 +200,19 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({ open, onClose, location, 
         <div className="flex items-center gap-2">
           <button
             className="px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white hover:bg-white/30 transition"
-            onClick={() => setShowCard((s) => !s)}
+            onClick={() => setShowCard(s => !s)}
           >
             {showCard ? 'Hide Card' : 'Show Card'}
           </button>
+          {onRefresh && (
+            <button
+              className="px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white hover:bg-white/30 transition disabled:opacity-40"
+              onClick={() => onRefresh()}
+              disabled={!!loading}
+            >
+              {loading ? '...' : 'Refresh'}
+            </button>
+          )}
           <button
             className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white border border-white/30 hover:bg-white/30 transition-all duration-300 hover:scale-105 transform"
             onClick={onClose}
@@ -226,7 +249,14 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({ open, onClose, location, 
           </div>
           <PhotoUpload openModal={openUploadModal} setModalState={setOpenUploadModal} />
 
-          <FlipCard isVisible={showCard} location={locationLabel} />
+          <FlipCard
+            isVisible={true}
+            location={location || 'Unknown'}
+            probability={probability}  // direct prop
+            description={description}
+            loading={loading}
+            error={error || null}
+          />
         </div>
       </div>
     </div>

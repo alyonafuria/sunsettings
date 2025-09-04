@@ -1,27 +1,43 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 interface FlipCardProps {
   isVisible: boolean
   location: string
+  probability?: number | null
+  description?: string
+  loading?: boolean
+  error?: string | null
 }
 
-const FlipCard: React.FC<FlipCardProps> = ({ isVisible, location }) => {
+const FlipCard: React.FC<FlipCardProps> = ({
+  isVisible,
+  location,
+  probability,
+  description,
+  loading,
+  error
+}) => {
   const [isFlipped, setIsFlipped] = useState(false)
+  // Log when probability changes (debug)
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.debug('[FlipCard] probability update:', probability)
+  }, [probability])
+
+  if (!isVisible) return null
 
   const handleFlip = () => {
-    setIsFlipped(!isFlipped)
+    if (loading) return
+    setIsFlipped(f => !f)
   }
 
-  // Generate random probability based on location (mock logic)
-  const getProbability = () => {
-    const seed = location.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-    const probability = 70 + (seed % 25) // Range: 70-95%
-    return probability
-  }
-
-  if (!isVisible) {
-    return null
-  }
+  // ONLY uses prop now
+  const shownProb =
+    typeof probability === 'number'
+      ? `${probability}%`
+      : loading
+        ? '...'
+        : '--'
 
   return (
     <div className="perspective-1000 w-full h-48 mx-auto animate-fade-in-up animation-delay-600">
@@ -35,30 +51,53 @@ const FlipCard: React.FC<FlipCardProps> = ({ isVisible, location }) => {
         <div className="absolute w-full h-full backface-hidden">
           <div className="w-full h-full bg-gradient-to-br from-yellow-400/90 via-orange-500/90 to-pink-500/90 backdrop-blur-md rounded-2xl shadow-2xl p-6 flex flex-col justify-center items-center border border-white/30">
             <div className="text-white text-center">
-              <div className="text-sm font-medium mb-2 opacity-90">Today in {location}</div>
+              <div className="text-sm font-medium mb-2 opacity-90">
+                Today in {location || '—'}
+              </div>
               <div className="text-3xl font-bold mb-3">Sunset Quality</div>
               <div className="relative">
-                <div className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-yellow-200 to-yellow-100">
-                  {getProbability()}%
+                <div
+                  key={shownProb} /* re-trigger text transition if needed */
+                  className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-yellow-200 to-yellow-100 transition-all"
+                >
+                  {shownProb}
                 </div>
-                <div className="absolute -top-2 -right-8 animate-pulse">
-                  <svg className="w-12 h-12 text-yellow-200/70" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.591a.75.75 0 101.06 1.06l1.591-1.591zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.591-1.591a.75.75 0 10-1.06 1.06l1.591 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.591a.75.75 0 001.06 1.06l1.591-1.591zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06L6.166 5.106a.75.75 0 00-1.06 1.06l1.591 1.591z" />
-                  </svg>
-                </div>
+                {loading && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="loading loading-spinner text-yellow-100" />
+                  </div>
+                )}
               </div>
+              <p className="mt-2 text-[10px] opacity-70">
+                {loading ? 'Evaluating…' : 'Tap card for details'}
+              </p>
+              {!loading && typeof probability === 'number' && probability === 0 && (
+                <p className="text-[10px] text-red-100 mt-1">No data</p>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Back Side - Sunset Information */}
+        {/* Back */}
         <div className="absolute w-full h-full backface-hidden rotate-y-180">
           <div className="w-full h-full bg-gradient-to-br from-purple-500/90 via-pink-500/90 to-orange-500/90 backdrop-blur-md rounded-2xl shadow-2xl p-6 flex flex-col justify-center border border-white/30">
-            <div className="text-white">
-              <p className="text-sm leading-relaxed opacity-95">
-                The golden hour approaches with perfect conditions. Clear skies and scattered clouds create an ideal canvas for nature's
-                daily masterpiece.
-              </p>
+            <div className="text-white text-sm leading-relaxed opacity-95">
+              {loading && (
+                <div className="flex items-center gap-2 opacity-90">
+                  <span className="loading loading-spinner loading-sm" />
+                  Fetching description...
+                </div>
+              )}
+              {!loading && error && (
+                <span className="text-red-200">{error}</span>
+              )}
+              {!loading && !error && (
+                <span>
+                  {description && description.trim().length > 0
+                    ? description
+                    : 'No description available.'}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -68,3 +107,4 @@ const FlipCard: React.FC<FlipCardProps> = ({ isVisible, location }) => {
 }
 
 export default FlipCard
+

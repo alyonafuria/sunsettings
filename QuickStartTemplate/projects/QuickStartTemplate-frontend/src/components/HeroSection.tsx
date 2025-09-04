@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import MapFullScreen from './MapFullScreen'
+
+const VITE_OPENAI_KEY = import.meta.env.VITE_OPENAI_API_KEY || ''
+const VITE_OPENAI_MODEL = import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o-mini'
 
 interface HeroSectionProps {}
 
@@ -10,6 +13,14 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
   const [customLocation, setCustomLocation] = useState<string>('')
   const [hasLocationBeenSet, setHasLocationBeenSet] = useState<boolean>(false)
   const [openMap, setOpenMap] = useState<boolean>(false)
+  const [sunsetProbability, setSunsetProbability] = useState<number | null>(null)
+  const [sunsetDescription, setSunsetDescription] = useState<string>('')
+  const [sunsetLoading, setSunsetLoading] = useState(false)
+  const [sunsetError, setSunsetError] = useState<string | null>(null)
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastSaltRef = useRef<string>('')
+  const previousResultRef = useRef<{ location: string; probability: number | null } | null>(null)
 
   // Popular locations for dropdown
   const popularLocations = [
@@ -91,6 +102,143 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
       setCustomLocation('')
     }
   }
+
+  const fetchSunsetData = async (loc: string, force = false) => {
+    if (!VITE_OPENAI_KEY || !loc) return
+
+    setSunsetLoading(true)
+    setSunsetError(null)
+    if (force) {
+      setSunsetProbability(null)
+      setSunsetDescription('')
+    }
+
+    // Helper used twice (may retry)
+    const callModel = async (seed: string) => {
+      const nowISO = new Date().toISOString()
+      const prompt = `
+Return ONLY raw JSON:
+{"probability": 0-100, "description":"<=160 chars concise poetic sunset expectation (no inner quotes)"}
+Rules:
+- Probability must be an integer 0-100.
+- Do NOT always respond with 75. Use varied values. 75 only if sunset is truly average.
+- If conditions sound potentially colorful use 80-95, dull/hazy lower, very poor <50.
+Location: ${loc}
+TimeUTC: ${nowISO}
+RandomSeed: ${seed}`.trim()
+
+      const r = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${VITE_OPENAI_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: VITE_OPENAI_MODEL,
+          temperature: 0.65,
+          max_tokens: 120,
+          messages: [
+            { role: 'system', content: 'Output ONLY raw JSON.' },
+            { role: 'user', content: prompt },
+          ],
+        }),
+      })
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      const data = await r.json()
+      const raw = data?.choices?.[0]?.message?.content?.trim() || ''
+      // Debug raw
+      // eslint-disable-next-line no-console
+      console.debug('[SunsetAI raw]', raw)
+      let parsed: any = null
+      try { parsed = JSON.parse(raw) } catch {
+        const m = raw.match(/\{[\s\S]*\}/); if (m) { try { parsed = JSON.parse(m[0]) } catch {} }
+      }
+      if (!parsed || typeof parsed !== 'object') throw new Error('Bad JSON')
+      return parsed
+    }
+
+    try {
+      const seed1 = Math.random().toString(36).slice(2, 10)
+      let parsed = await callModel(seed1)
+
+      const normalizeProb = (p: any) =>
+        typeof p === 'number'
+          ? Math.min(100, Math.max(0, Math.round(p)))
+          : null
+
+      let prob = normalizeProb(parsed.probability)
+
+      const prev = previousResultRef.current
+      const needsRetry =
+        prob === 75 ||
+        (prev && prev.location === loc && typeof prev.probability === 'number' && prev.probability === prob)
+
+      if (needsRetry) {
+        try {
+          const seed2 = Math.random().toString(36).slice(2, 10)
+          const retryParsed = await callModel(seed2)
+          const retryProb = normalizeProb(retryParsed.probability)
+          // Use retry if it yields a different or non-75 value
+            if (
+              retryProb !== null &&
+              (retryProb !== prob || retryProb !== 75)
+            ) {
+            parsed = retryParsed
+            prob = retryProb
+          }
+        } catch {
+          // ignore retry failure
+        }
+      }
+
+      // If STILL 75 (model stubborn) or null, synthesize a varied probability
+      if (prob === null || prob === 75) {
+        const hash = Array.from(loc).reduce((a, c) => (a * 131 + c.charCodeAt(0)) % 1000003, 7)
+        const base = 40 + (hash % 50) // 40..89
+        const jitter = Math.floor(Math.random() * 11) // 0..10
+        let synthetic = base + jitter
+        // Spread more to higher side occasionally
+        if (synthetic < 55 && Math.random() < 0.4) synthetic += 20
+        prob = Math.min(96, synthetic)
+        if (!parsed.description || typeof parsed.description !== 'string') {
+          parsed.description = 'Average conditions; estimated locally (model fallback).'
+        }
+        // eslint-disable-next-line no-console
+        console.debug('[SunsetAI fallback probability]', prob)
+      }
+
+      setSunsetProbability(prob)
+      setSunsetDescription(
+        typeof parsed.description === 'string'
+          ? parsed.description.slice(0, 160)
+          : 'No description'
+      )
+      previousResultRef.current = { location: loc, probability: prob }
+    } catch (e: any) {
+      setSunsetError(e.message || 'Fetch failed')
+      if (!sunsetDescription) setSunsetDescription('No description')
+    } finally {
+      setSunsetLoading(false)
+    }
+  }
+
+  const handleOpenMap = async () => {
+    // Always force a fresh fetch when opening map if location changed or no data yet
+    await fetchSunsetData(location, true)
+    setOpenMap(true)
+  }
+
+  // Reset & debounce fetch when location changes (after user selection)
+  useEffect(() => {
+    if (!hasLocationBeenSet || !location) return
+    setSunsetProbability(null)
+    setSunsetDescription('')
+    setSunsetError(null)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      fetchSunsetData(location, true)
+    }, 400)
+  }, [location, hasLocationBeenSet]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="relative w-full min-h-screen overflow-hidden">
@@ -197,24 +345,30 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
           {hasLocationBeenSet && location && (
             <div className="mb-6">
               <button
-                onClick={() => setOpenMap(true)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500/80 to-pink-500/80 backdrop-blur-md rounded-full text-white border border-white/30 hover:from-purple-600/90 hover:to-pink-600/90 hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                onClick={handleOpenMap}
+                disabled={sunsetLoading || !VITE_OPENAI_KEY}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500/80 to-pink-500/80 backdrop-blur-md rounded-full text-white border border-white/30 hover:from-purple-600/90 hover:to-pink-600/90 hover:shadow-lg transition-all duration-300 disabled:opacity-50"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
-                  />
-                </svg>
-                <span className="font-medium">Open Map</span>
+                {sunsetLoading ? <span className="loading loading-spinner loading-sm" /> : 'Open Map'}
               </button>
+              {sunsetError && <p className="text-xs text-red-200 mt-2">{sunsetError}</p>}
+              {!VITE_OPENAI_KEY && (
+                <p className="text-xs text-red-200 mt-2">VITE_OPENAI_API_KEY missing</p>
+              )}
             </div>
           )}
 
           {/* Map Modal */}
-          <MapFullScreen open={openMap} onClose={() => setOpenMap(false)} location={location} />
+          <MapFullScreen
+            open={openMap}
+            onClose={() => setOpenMap(false)}
+            location={location}
+            probability={sunsetProbability}
+            description={sunsetDescription}
+            loading={sunsetLoading}
+            error={sunsetError || undefined}
+            onRefresh={() => fetchSunsetData(location, true)}
+          />
         </div>
       </div>
 

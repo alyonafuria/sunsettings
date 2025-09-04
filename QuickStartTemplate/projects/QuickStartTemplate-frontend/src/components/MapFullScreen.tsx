@@ -1,6 +1,8 @@
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import FlipCard from './FlipCard'
+import PhotoUpload from './PhotoUpload'
 
 interface MapFullScreenProps {
   open: boolean
@@ -21,6 +23,9 @@ const BASE_BW_STYLE = 'mapbox://styles/mapbox/light-v11'
 const MapFullScreen: React.FC<MapFullScreenProps> = ({ open, onClose, center }) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
+  const [showCard, setShowCard] = useState(true)
+  const locationLabel = center ? `${center[1].toFixed(4)}, ${center[0].toFixed(4)}` : 'Berlin'
+  const [openUploadModal, setOpenUploadModal] = useState<boolean>(false)
 
   useEffect(() => {
     if (!open || !mapContainerRef.current) return
@@ -182,18 +187,26 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({ open, onClose, center }) 
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-sm" role="dialog" aria-modal="true">
-      {/* Header bar with gradient matching the app theme */}
+      {/* Header bar */}
       <div className="flex justify-between items-center p-4 bg-gradient-to-r from-orange-500/90 via-red-500/90 to-purple-600/90 backdrop-blur-md shadow-lg">
         <h2 className="text-xl font-bold text-white">Sunset Map</h2>
-        <button
-          className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white border border-white/30 hover:bg-white/30 transition-all duration-300 hover:scale-105 transform"
-          onClick={onClose}
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-          <span className="font-medium">Close</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            className="px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white hover:bg-white/30 transition"
+            onClick={() => setShowCard((s) => !s)}
+          >
+            {showCard ? 'Hide Card' : 'Show Card'}
+          </button>
+          <button
+            className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white border border-white/30 hover:bg-white/30 transition-all duration-300 hover:scale-105 transform"
+            onClick={onClose}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <span className="font-medium">Close</span>
+          </button>
+        </div>
       </div>
 
       {/* Floating close button (alternative/additional) */}
@@ -207,7 +220,24 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({ open, onClose, center }) 
         </svg>
       </button>
 
+      {/* Map container */}
       <div ref={mapContainerRef} className="flex-1" />
+
+      {/* FlipCard overlay */}
+      <div className="pointer-events-none absolute inset-0 flex justify-center items-start pt-28 px-4">
+        <div className="pointer-events-auto w-full max-w-md">
+          <FlipCard isVisible={showCard} location={locationLabel} />
+          <div className="mt-4 flex justify-center">
+            <button
+              className="btn btn-warning w-full"
+              onClick={() => setOpenUploadModal(true)}
+            >
+              Upload Photo
+            </button>
+          </div>
+          <PhotoUpload openModal={openUploadModal} setModalState={setOpenUploadModal} />
+        </div>
+      </div>
     </div>
   )
 }

@@ -1,83 +1,93 @@
-# Algorand-dApp-Quick-Start-Template-TypeScript
+# On-Chain Sunset Beauty Calculator
 
-This is a full-stack starter template for quickly building and testing Web3 ideas on Algorand. It includes:
+This is a project for the [Algorand hackathon: AI meets Blockchain](https://luma.com/be27ik5w?tk=68T2qF) that took place on 3-4 September 2025 in [W3Hub](https://w3hub.berlin/), Berlin, Germany.
 
-- Wallet connection
-- Send ALGO payments
-- NFT minting (IPFS metadata via Pinata)
-- Token (ASA) creation
-- Smart contract interaction demo
+The project is a full-stack decentralized application built on Algorand that calculates sunset beauty probability using AI-powered weather analysis and features an interactive map interface with photo sharing capabilities.
 
-Use this template to kickstart your project, prototype ideas, and showcase a working proof-of-concept.
+The demo of this web app is deployed [here](https://sunsettings.vercel.app/) to Vercel.
 
-## 🌟 How To Get Started Instructions
+## Project Overview
 
-### **Fork the Repo:**
+This fork extends the original AlgoKit QuickStartTemplate with a Sunset Beauty Calculator frontend application. The main changes are in the frontend project (`projects/QuickStartTemplate-frontend/`), which transforms the basic dApp template into an interactive sunset prediction and photo-sharing platform.
 
-To create your own copy of this repository:
+## Key Features
 
-a. **Go to the GitHub Repository:**
-   - Navigate to the main page which is the current one your on.
+- **AI-Powered Sunset Analysis**: Uses OpenAI GPT models to analyze weather data and predict sunset quality
+- **Interactive Mapbox Integration**: Full-screen map interface with location-based sunset predictions
+- **Photo Upload & IPFS Storage**: Users can upload sunset photos with geolocation markers
+- **Leaderboard System**: Community-driven ranking of sunset photos with voting mechanism
+- **Wallet Integration**: Support for multiple Algorand wallets (Pera, Defly, Exodus, KMD)
+- **Real-time Weather Data**: Integration with BrightSky weather API for accurate forecasting
 
-b. **Click the "Fork" Button:**
-   - In the top-right corner of the page, click the **Fork** button. This will create a copy of the repository under your GitHub account. Feel free to hit the ⭐️ aswell so you can find the Algorand-dApp-Quick-Start-Template-Typescript repo easily!
+## Prerequisites
 
-c. **Wait for the Forking Process to Complete:**
-   - GitHub will take a few moments to create the fork. Once complete, you’ll be redirected to your newly created fork.
+- Python 3.12+
+- AlgoKit CLI - Install following the https://github.com/algorandfoundation/algokit-cli#install
+- Docker - Required for local Algorand development
+- Node.js 20.0+ and npm 9.0+
 
+## Additional API Keys Required
 
-https://github.com/user-attachments/assets/92e746e1-3143-4769-8a5a-1339e4bd7a14
+- OpenAI API Key - For sunset quality analysis
+- Mapbox Token - For interactive map functionality
 
+## Setup
 
-## 🚀 Start with Codespaces
-This is the fastest way to get up and running!
+### Initial Setup
 
-1. **Create a Codespace:**
+1. Clone this repository to your local machine
+2. Install AlgoKit and ensure Docker is running
+3. Run algokit project bootstrap all in the project directory
+4. Create .env file in projects/QuickStartTemplate-frontend/ with:
+   ```bash
+   VITE_OPENAI_API_KEY=your_openai_api_key
+   VITE_MAPBOX_TOKEN=your_mapbox_token
+   VITE_OPENAI_MODEL=gpt-4o-mini
+   ```
+5. For smart contracts: algokit generate `env-file -a target_network localnet` from the contracts directory
+6. Build the project: `algokit project run build`
 
-   - Click the green "Code" button at the top right of your forked repo.
-   - Select "Create codespace on main".
-   - Once your Codespace is fully loaded, you are ready to go!
+## Development
 
-Make sure to wait for algokit to be installed automatically - it should only take a few mins max!
+- Start frontend development server: `npm run dev` (from frontend directory)
+- The app will automatically generate TypeScript clients from smart contract artifacts
+- Smart contracts are located in `projects/QuickStartTemplate-contracts/`
+- Frontend application is in `projects/QuickStartTemplate-frontend/`
 
-2. **While in Codespace:**
-   - Enter the workspace 
-   <img width="2794" height="1524" alt="image" src="https://github.com/user-attachments/assets/41f25490-1284-4998-b342-27f7a0ffb420" />
+## Frontend Architecture
 
-3. **Give it a testrun!:** (WIP)
-   - Click on run & debug
-   - Run and deploy the hello world smart contract
-   - And then run dApp - check out what is already given to you. Or simply `npm run dev` in the CLI!
-   <img width="1528" height="808" alt="image" src="https://github.com/user-attachments/assets/2f337d67-02e2-4b0c-8244-109951269b5e" />
+The frontend is built with React 18 + TypeScript + Vite and includes:
 
-**Pro Tip:** GitHub Codespaces is included with free accounts but comes with a monthly limit of 60 hours.  
+- React Router - Multi-page navigation (Home, Leaderboard)
+- Tailwind CSS + daisyUI - Responsive styling framework
+- MapboxGL - Interactive mapping functionality
+- AlgoKit Utils - Algorand blockchain integration
+- TxnLab Use-Wallet - Multi-wallet support
 
-To avoid losing your progress, be sure to **commit your changes regularly** — just like shown in the video demo below — so your updates are saved to your forked repository.
+## Key Components
 
-https://github.com/user-attachments/assets/dd452ea1-3070-4718-af34-bea978e208ab
+- `HeroSection.tsx` - Main sunset calculator interface with location detection
+- `MapFullScreen.tsx` - Interactive map with photo markers and predictions
+- `Leaderboard.tsx` - Community photo ranking system
+- `PhotoUpload.tsx` - IPFS-based photo storage with metadata
+- `FlipCard.tsx` - Animated sunset prediction display
 
+## API Integrations
 
-## For Local Devs:
-If `npm run dev` doesn’t work, run:   `npm install --save-dev @algorandfoundation/algokit-client-generator`
+- OpenStreetMap Nominatim - Geocoding and reverse geocoding
+- BrightSky Weather API - Hourly weather data for sunset predictions
+- OpenAI API - AI-powered sunset quality analysis
+- Mapbox Maps API - Interactive map rendering
 
-And create your `.env` file by copying from the `.env.template`
+## Deployment
 
+The project supports automated deployment via GitHub Actions:
 
-## Project Structure Simplified
+- Smart contracts deploy to TestNet via AlgoKit
+- Frontend can be deployed to Netlify, Vercel, or similar platforms
+- Environment variables must be configured in deployment settings
 
-- `projects/QuickStartTemplate-frontend/src/` — Frontend code (The webpage)  
-- `projects/QuickStartTemplate-frontend/src/App.tsx` — Main app layout and routing  
-- `projects/QuickStartTemplate-frontend/src/components/Transact.tsx` — Simple transfer ALGO logic (Provided to you thanks to AlgoKit)  
-- `projects/QuickStartTemplate-frontend/src/components/NFTmint.tsx` — Simple NFT minting interface  
-- `projects/QuickStartTemplate-frontend/src/components/Tokenmint.tsx` — Simple token (ASA) minting interface  
-- `projects/QuickStartTemplate-frontend/src/components/AppCalls.tsx` — Smart contract interaction demo  
-- `projects/QuickStartTemplate-contracts/smart_contracts/hello_world/contract.algo.ts` — Example TypeScript smart contract  
+---
 
-
-## Reference Guide
-
-Need more help? See the Algorand-dApp-Quick-Start-Template Reference Guide for step-by-step instructions, AI prompts, and troubleshooting tips:
-
-[View the guide](https://docs.google.com/document/d/1f_ysbtFOLKM_Tjvey7VCcGYsAzOmyEVmsdC5si936wc/edit?usp=sharing)
-
+Built with https://github.com/algorandfoundation/algokit-cli • Algorand Blockchain • React • TypeScript
 

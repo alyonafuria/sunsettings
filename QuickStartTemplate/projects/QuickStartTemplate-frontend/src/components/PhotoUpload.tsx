@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 interface PhotoUploadProps {
   openModal: boolean
@@ -63,7 +63,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ openModal, setModalState, onP
       // Optional metadata
       const metadata = {
         name: file.name,
-        keyvalues: { app: 'quickstart', type: 'photo' }
+        keyvalues: { app: 'quickstart', type: 'photo' },
       }
       formData.append('pinataMetadata', JSON.stringify(metadata))
 
@@ -76,9 +76,9 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ openModal, setModalState, onP
           ? { Authorization: `Bearer ${PINATA_JWT}` }
           : {
               pinata_api_key: PINATA_API_KEY || '',
-              pinata_secret_api_key: PINATA_API_SECRET || ''
+              pinata_secret_api_key: PINATA_API_SECRET || '',
             },
-        body: formData
+        body: formData,
       })
 
       if (!res.ok) {
@@ -92,17 +92,17 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ openModal, setModalState, onP
       setStatus('Upload complete.')
       setShowUploaded(true)
       setImageLoaded(false)
-      
+
       // Call the callback to add marker to map
       if (onPhotoUploaded && ipfsHash) {
         onPhotoUploaded(ipfsHash, file.name)
       }
-      
+
       // Close the modal after successful upload
       setTimeout(() => {
         close()
       }, 1000)
-      
+
       // Revoke local preview once we rely on IPFS
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl)
@@ -134,21 +134,14 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ openModal, setModalState, onP
             Provide VITE_PINATA_JWT (preferred) or VITE_PINATA_API_KEY & VITE_PINATA_API_SECRET in .env
           </p>
         )}
-        <input
-          type="file"
-          accept="image/*"
-          className="file-input file-input-bordered w-full mb-3"
-          onChange={onSelect}
-        />
+        <input type="file" accept="image/*" className="file-input file-input-bordered w-full mb-3" onChange={onSelect} />
 
         {status && <p className="text-sm mb-3">{status}</p>}
 
         {(uploading || (showUploaded && !imageLoaded)) && (
           <div className="flex flex-col items-center gap-2 mb-4">
             <span className="loading loading-spinner loading-md" />
-            <p className="text-xs">
-              {uploading ? 'Uploading to Pinata...' : 'Fetching image from IPFS...'}
-            </p>
+            <p className="text-xs">{uploading ? 'Uploading to Pinata...' : 'Fetching image from IPFS...'}</p>
           </div>
         )}
 
@@ -156,11 +149,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ openModal, setModalState, onP
         {!showUploaded && previewUrl && (
           <div className="mb-4">
             <p className="text-xs mb-1 opacity-70">Local preview (not yet on IPFS)</p>
-            <img
-              src={previewUrl}
-              alt="preview"
-              className="max-h-56 rounded border object-contain mx-auto"
-            />
+            <img src={previewUrl} alt="preview" className="max-h-56 rounded border object-contain mx-auto" />
           </div>
         )}
 
@@ -177,20 +166,10 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ openModal, setModalState, onP
             <div className="text-xs mt-2 break-all">
               CID: {cid}
               <div className="mt-1 flex gap-2 flex-wrap">
-                <a
-                  className="link"
-                  href={ipfsImageUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <a className="link" href={ipfsImageUrl} target="_blank" rel="noopener noreferrer">
                   Pinata Gateway
                 </a>
-                <a
-                  className="link"
-                  href={`https://ipfs.io/ipfs/${cid}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <a className="link" href={`https://ipfs.io/ipfs/${cid}`} target="_blank" rel="noopener noreferrer">
                   ipfs.io
                 </a>
               </div>
@@ -199,11 +178,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ openModal, setModalState, onP
         )}
 
         <div className="flex gap-2 mt-2">
-          <button
-            className="btn btn-primary flex-1"
-            onClick={upload}
-            disabled={!file || uploading}
-          >
+          <button className="btn btn-primary flex-1" onClick={upload} disabled={!file || uploading}>
             {uploading ? 'Uploading...' : 'Upload'}
           </button>
           <button className="btn" onClick={close} disabled={uploading}>

@@ -15,7 +15,7 @@ interface PhotoMarker {
 interface MapFullScreenProps {
   open: boolean
   onClose: () => void
-  center?: [number, number]        // lng, lat
+  center?: [number, number] // lng, lat
   location: string
   probability?: number | null
   description?: string
@@ -61,11 +61,13 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
   const markersRef = useRef<mapboxgl.Marker[]>([])
 
   const handlePhotoUploaded = (ipfsHash: string, fileName: string) => {
-    if (!center) return
+    // TODO: replace random lat, long generation with the metadata fetch (from the photo uploaded)
+    const lng = 13.0884 + Math.random() * (13.7612 - 13.0884)
+    const lat = 52.3383 + Math.random() * (52.6755 - 52.3383)
 
     const newMarker: PhotoMarker = {
       id: Date.now().toString(),
-      coordinates: center,
+      coordinates: [lng, lat],
       ipfsHash,
       name: fileName,
       timestamp: new Date().toISOString(),
@@ -337,10 +339,7 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
   useEffect(() => {
     if (!open || !mapRef.current || !center) return
     const prev = lastCenterRef.current
-    const changed =
-      !prev ||
-      Math.abs(prev[0] - center[0]) > 0.0001 ||
-      Math.abs(prev[1] - center[1]) > 0.0001
+    const changed = !prev || Math.abs(prev[0] - center[0]) > 0.0001 || Math.abs(prev[1] - center[1]) > 0.0001
     if (changed) {
       mapRef.current.flyTo({ center, essential: true, zoom: Math.max(mapRef.current.getZoom(), 10) })
       lastCenterRef.current = center

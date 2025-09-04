@@ -3,6 +3,7 @@ import React, { useCallback, useState, useEffect } from 'react'
 interface PhotoUploadProps {
   openModal: boolean
   setModalState: (open: boolean) => void
+  onPhotoUploaded?: (ipfsHash: string, fileName: string) => void
 }
 
 const PINATA_JWT = import.meta.env.VITE_PINATA_JWT as string | undefined
@@ -10,7 +11,7 @@ const PINATA_JWT = import.meta.env.VITE_PINATA_JWT as string | undefined
 const PINATA_API_KEY = import.meta.env.VITE_PINATA_API_KEY as string | undefined
 const PINATA_API_SECRET = import.meta.env.VITE_PINATA_API_SECRET as string | undefined
 
-const PhotoUpload: React.FC<PhotoUploadProps> = ({ openModal, setModalState }) => {
+const PhotoUpload: React.FC<PhotoUploadProps> = ({ openModal, setModalState, onPhotoUploaded }) => {
   const [file, setFile] = useState<File | null>(null)
   const [status, setStatus] = useState<string>('')
   const [cid, setCid] = useState<string>('')
@@ -86,10 +87,22 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ openModal, setModalState }) =
       }
 
       const data = await res.json()
-      setCid(data.IpfsHash || data.cid || '')
+      const ipfsHash = data.IpfsHash || data.cid || ''
+      setCid(ipfsHash)
       setStatus('Upload complete.')
       setShowUploaded(true)
       setImageLoaded(false)
+      
+      // Call the callback to add marker to map
+      if (onPhotoUploaded && ipfsHash) {
+        onPhotoUploaded(ipfsHash, file.name)
+      }
+      
+      // Close the modal after successful upload
+      setTimeout(() => {
+        close()
+      }, 1000)
+      
       // Revoke local preview once we rely on IPFS
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl)
@@ -108,7 +121,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ openModal, setModalState }) =
     }
   }, [previewUrl])
 
-  const ipfsImageUrl = cid ? `https://gateway.pinata.cloud/ipfs/${cid}` : ''
+  const ipfsImageUrl = cid ? `https://tan-mad-gorilla-689.mypinata.cloud/ipfs/${cid}` : ''
 
   if (!openModal) return null
 

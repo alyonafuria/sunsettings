@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import MapFullScreen from './MapFullScreen'
 
 const VITE_OPENAI_KEY = import.meta.env.VITE_OPENAI_API_KEY || ''
@@ -150,8 +150,15 @@ RandomSeed: ${seed}`.trim()
       // eslint-disable-next-line no-console
       console.debug('[SunsetAI raw]', raw)
       let parsed: any = null
-      try { parsed = JSON.parse(raw) } catch {
-        const m = raw.match(/\{[\s\S]*\}/); if (m) { try { parsed = JSON.parse(m[0]) } catch {} }
+      try {
+        parsed = JSON.parse(raw)
+      } catch {
+        const m = raw.match(/\{[\s\S]*\}/)
+        if (m) {
+          try {
+            parsed = JSON.parse(m[0])
+          } catch {}
+        }
       }
       if (!parsed || typeof parsed !== 'object') throw new Error('Bad JSON')
       return parsed
@@ -161,17 +168,12 @@ RandomSeed: ${seed}`.trim()
       const seed1 = Math.random().toString(36).slice(2, 10)
       let parsed = await callModel(seed1)
 
-      const normalizeProb = (p: any) =>
-        typeof p === 'number'
-          ? Math.min(100, Math.max(0, Math.round(p)))
-          : null
+      const normalizeProb = (p: any) => (typeof p === 'number' ? Math.min(100, Math.max(0, Math.round(p))) : null)
 
       let prob = normalizeProb(parsed.probability)
 
       const prev = previousResultRef.current
-      const needsRetry =
-        prob === 75 ||
-        (prev && prev.location === loc && typeof prev.probability === 'number' && prev.probability === prob)
+      const needsRetry = prob === 75 || (prev && prev.location === loc && typeof prev.probability === 'number' && prev.probability === prob)
 
       if (needsRetry) {
         try {
@@ -179,10 +181,7 @@ RandomSeed: ${seed}`.trim()
           const retryParsed = await callModel(seed2)
           const retryProb = normalizeProb(retryParsed.probability)
           // Use retry if it yields a different or non-75 value
-            if (
-              retryProb !== null &&
-              (retryProb !== prob || retryProb !== 75)
-            ) {
+          if (retryProb !== null && (retryProb !== prob || retryProb !== 75)) {
             parsed = retryParsed
             prob = retryProb
           }
@@ -208,11 +207,7 @@ RandomSeed: ${seed}`.trim()
       }
 
       setSunsetProbability(prob)
-      setSunsetDescription(
-        typeof parsed.description === 'string'
-          ? parsed.description.slice(0, 160)
-          : 'No description'
-      )
+      setSunsetDescription(typeof parsed.description === 'string' ? parsed.description.slice(0, 160) : 'No description')
       previousResultRef.current = { location: loc, probability: prob }
     } catch (e: any) {
       setSunsetError(e.message || 'Fetch failed')
@@ -352,9 +347,7 @@ RandomSeed: ${seed}`.trim()
                 {sunsetLoading ? <span className="loading loading-spinner loading-sm" /> : 'Open Map'}
               </button>
               {sunsetError && <p className="text-xs text-red-200 mt-2">{sunsetError}</p>}
-              {!VITE_OPENAI_KEY && (
-                <p className="text-xs text-red-200 mt-2">VITE_OPENAI_API_KEY missing</p>
-              )}
+              {!VITE_OPENAI_KEY && <p className="text-xs text-red-200 mt-2">VITE_OPENAI_API_KEY missing</p>}
             </div>
           )}
 

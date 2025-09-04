@@ -445,7 +445,7 @@ RandomSeed: ${seed}`.trim()
                 disabled={sunsetLoading || !VITE_OPENAI_KEY}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500/80 to-pink-500/80 backdrop-blur-md rounded-full text-white border border-white/30 hover:from-purple-600/90 hover:to-pink-600/90 hover:shadow-lg transition-all duration-300 disabled:opacity-50"
               >
-                {sunsetLoading ? <span className="loading loading-spinner loading-sm" /> : 'Open Map'}
+                {sunsetLoading ? <span className="loading loading-spinner loading-sm" /> : 'What are my chances?'}
               </button>
               {sunsetError && <p className="text-xs text-red-200 mt-2">{sunsetError}</p>}
               {!VITE_OPENAI_KEY && <p className="text-xs text-red-200 mt-2">VITE_OPENAI_API_KEY missing</p>}

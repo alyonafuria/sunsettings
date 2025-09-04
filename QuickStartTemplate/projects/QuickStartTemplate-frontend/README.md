@@ -6,6 +6,10 @@ The project is a full-stack decentralized application built on Algorand that cal
 
 The demo of this web app is deployed [here](https://sunsetting.vercel.app/) to Vercel.
 
+<img src="startscreen.png" alt="Start Screen" width="500" height="300">
+<img src="mapscreen.png" alt="Map Screen" width="500" height="300">
+<img src="votingscreen.png" alt="Voting Screen" width="500" height="300">
+
 ## Project Overview
 
 This fork extends the original AlgoKit QuickStartTemplate with a Sunset Beauty Calculator frontend application. The main changes are in the frontend project (`projects/QuickStartTemplate-frontend/`), which transforms the basic dApp template into an interactive sunset prediction and photo-sharing platform.

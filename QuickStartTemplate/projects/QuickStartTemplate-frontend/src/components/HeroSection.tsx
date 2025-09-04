@@ -93,7 +93,7 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
   }
 
   return (
-    <div className="relative w-full min-h-[600px] overflow-visible">
+    <div className="relative w-full min-h-screen overflow-hidden">
       <div className="absolute inset-0 rounded-full">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-400 via-red-500 to-pink-500 animate-gradient-shift rounded-full" />
         <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/40 via-pink-500/30 to-yellow-400/40 animate-gradient-drift rounded-full" />
@@ -107,10 +107,10 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
       </div>
 
       {/* Content */}
-      <div className="max-w-md w-full mx-auto relative z-10 items-center justify-center min-h-[600px] px-6 py-12">
+      <div className="flex h-screen max-w-md w-full mx-auto relative z-10 items-center justify-center px-6">
         <div className="text-center max-w-4xl mx-auto">
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 animate-fade-in-up">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 via-red-300 to-purple-900">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-rose-700 via-red-500 to-purple-900">
               Calculate Sunset Beauty
             </span>
           </h1>

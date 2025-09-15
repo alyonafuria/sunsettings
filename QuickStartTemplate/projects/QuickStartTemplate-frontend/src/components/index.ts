@@ -9,6 +9,7 @@ export { default as Transact } from './wallet/Transact'
 
 // Sunset Components
 export { default as HeroSection } from './sunset/HeroSection'
+export { default as LocationSelector } from './sunset/LocationSelector'
 export { default as MapFullScreen } from './sunset/MapFullScreen'
 export { default as PhotoUpload } from './sunset/PhotoUpload'
 export { default as Leaderboard } from './sunset/Leaderboard'

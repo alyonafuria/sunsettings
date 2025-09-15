@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import Transact from './Transact'
+import Transact from '../wallet/Transact'
 
 interface LeaderboardEntry {
   id: number

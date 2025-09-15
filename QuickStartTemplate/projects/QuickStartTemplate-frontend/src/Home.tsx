@@ -3,7 +3,7 @@ import { useWallet } from '@txnlab/use-wallet-react'
 import React, { useState } from 'react'
 
 // Components
-import HeroSection from './components/HeroSection'
+import HeroSection from './components/sunset/HeroSection'
 
 // Frontend modals
 

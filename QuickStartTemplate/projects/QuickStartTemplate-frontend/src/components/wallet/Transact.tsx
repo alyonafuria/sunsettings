@@ -2,7 +2,7 @@ import { algo, AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { useSnackbar } from 'notistack'
 import { useState } from 'react'
-import { getAlgodConfigFromViteEnvironment } from '../utils/network/getAlgoClientConfigs'
+import { getAlgodConfigFromViteEnvironment } from '../../utils/network/getAlgoClientConfigs'
 
 interface TransactInterface {
   openModal: boolean
@@ -29,6 +29,7 @@ const Transact = ({ openModal, setModalState }: TransactInterface) => {
     }
 
     try {
+      // TODO remove hardcoded receiver:
       enqueueSnackbar('Sending transaction...', { variant: 'info' })
       const result = await algorand.send.payment({
         signer: transactionSigner,

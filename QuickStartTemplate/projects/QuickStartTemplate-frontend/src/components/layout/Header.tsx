@@ -1,7 +1,7 @@
 import { useWallet } from '@txnlab/use-wallet-react'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import ConnectWallet from './ConnectWallet'
+import ConnectWallet from '../wallet/ConnectWallet'
 
 interface HeaderProps {}
 

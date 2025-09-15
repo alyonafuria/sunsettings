@@ -1,7 +1,7 @@
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import React, { useEffect, useRef, useState } from 'react'
-import FlipCard from './FlipCard'
+import FlipCard from '../ui/FlipCard'
 import PhotoUpload from './PhotoUpload'
 
 interface PhotoMarker {
@@ -385,7 +385,7 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
 
       {/* Floating close button (alternative/additional) */}
       <button
-        className="absolute right-2 top-40 right-4 z-10 w-12 h-12 bg-gradient-to-r from-red-500 to-pink-500 rounded-full text-white shadow-lg hover:shadow-xl hover:scale-110 transform transition-all duration-300 flex items-center justify-center"
+        className="absolute top-40 right-4 z-10 w-12 h-12 bg-gradient-to-r from-red-500 to-pink-500 rounded-full text-white shadow-lg hover:shadow-xl hover:scale-110 transform transition-all duration-300 flex items-center justify-center"
         onClick={onClose}
         aria-label="Close map"
       >

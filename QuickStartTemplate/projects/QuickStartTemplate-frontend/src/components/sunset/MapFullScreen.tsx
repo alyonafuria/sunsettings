@@ -52,7 +52,7 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
   const [photoMarkers, setPhotoMarkers] = useState<PhotoMarker[]>([
     {
       id: 'test-marker',
-      coordinates: [13.405, 52.52],
+      coordinates: [13.377, 52.497],
       ipfsHash: 'bafkreihp52znq3lewre7mmerah5g7tnrmbwrjx4zp3ywmol2e7cjo3gsdi',
       name: 'Test Photo',
       timestamp: new Date().toISOString(),
@@ -409,14 +409,7 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
 
       {/* FlipCard overlay */}
       <div className="pointer-events-none absolute inset-0 flex justify-center items-end p-6 px-4">
-        <div className="pointer-events-auto w-full max-w-md">
-          <div className="mt-4 mb-2 flex justify-center">
-            <button className="btn btn-warning rounded-2xl w-full" onClick={() => setOpenUploadModal(true)}>
-              Upload Photo
-            </button>
-          </div>
-          <PhotoUpload openModal={openUploadModal} setModalState={setOpenUploadModal} onPhotoUploaded={handlePhotoUploaded} />
-
+        <div className="pointer-events-auto w-full max-w-md flex flex-col items-center">
           <FlipCard
             isVisible={true}
             location={location || 'Unknown'}
@@ -425,6 +418,12 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
             loading={loading}
             error={error || null}
           />
+          <div className="mt-4 mb-2 flex justify-center w-full">
+            <button className="btn btn-warning rounded-2xl w-full" onClick={() => setOpenUploadModal(true)}>
+              Upload Photo
+            </button>
+          </div>
+          <PhotoUpload openModal={openUploadModal} setModalState={setOpenUploadModal} onPhotoUploaded={handlePhotoUploaded} />
         </div>
       </div>
     </div>

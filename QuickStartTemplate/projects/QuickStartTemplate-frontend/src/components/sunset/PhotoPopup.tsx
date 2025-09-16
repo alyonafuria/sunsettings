@@ -18,8 +18,8 @@ const PhotoModal: React.FC<PhotoModalProps> = ({ isOpen, photo, onClose }) => {
   if (!isOpen || !photo) return null
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true">
-      <div className="relative max-w-2xl max-h-[90vh] bg-gradient-to-br from-yellow-400/90 via-orange-500/90 to-pink-500/90 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden border border-white/30">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm pt-32" role="dialog" aria-modal="true">
+      <div className="relative max-w-2xl max-h-[90vh] bg-gradient-to-br from-yellow-400/90 via-orange-500/90 to-pink-500/90 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden border border-white/30 mb-20">
         {/* Close button */}
         <button
           className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full text-white flex items-center justify-center transition-colors"
@@ -43,30 +43,32 @@ const PhotoModal: React.FC<PhotoModalProps> = ({ isOpen, photo, onClose }) => {
 
           {/* Info panel */}
           <div className="px-6 pb-6 text-white">
-            <h3 className="text-2xl font-bold mb-4 text-center">{photo.name}</h3>
+            <h3 className="text-lg font-bold mb-4 text-center">{photo.name}</h3>
 
-            {/* Geolocation */}
-            <div className="mb-6">
-              <h4 className="text-sm font-semibold text-white/80 uppercase tracking-wide mb-2">Location</h4>
-              <div className="text-lg">
-                <div className="font-mono bg-white/10 rounded-lg p-3 backdrop-blur-sm">
-                  {photo.coordinates[1].toFixed(6).replace('.', ',')}, {photo.coordinates[0].toFixed(6).replace('.', ',')}
+            {/* Location and Timestamp - Side by side */}
+            <div className="flex gap-6 mb-6">
+              {/* Geolocation */}
+              <div className="flex-1">
+                <h4 className="text-sm font-semibold text-white/80 uppercase tracking-wide mb-2">Location</h4>
+                <div className="text-lg">
+                  <div className="font-mono bg-white/10 rounded-lg p-3 backdrop-blur-sm text-center">
+                    {photo.coordinates[1].toFixed(6).replace('.', ',')}, {photo.coordinates[0].toFixed(6).replace('.', ',')}
+                  </div>
                 </div>
-                <div className="text-sm text-white/70 mt-2 text-center">Latitude, Longitude</div>
               </div>
-            </div>
 
-            {/* Timestamp */}
-            <div className="mb-6">
-              <h4 className="text-sm font-semibold text-white/80 uppercase tracking-wide mb-2">Uploaded on</h4>
-              <div className="text-lg bg-white/10 rounded-lg p-3 backdrop-blur-sm text-center">
-                {new Date(photo.timestamp).toLocaleDateString('de-DE', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+              {/* Timestamp */}
+              <div className="flex-1">
+                <h4 className="text-sm font-semibold text-white/80 uppercase tracking-wide mb-2">Uploaded on</h4>
+                <div className="text-lg bg-white/10 rounded-lg p-3 backdrop-blur-sm text-center">
+                  {new Date(photo.timestamp).toLocaleDateString('de-DE', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </div>
               </div>
             </div>
 

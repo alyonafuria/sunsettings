@@ -59,9 +59,9 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
   const [showPhotoModal, setShowPhotoModal] = useState<boolean>(false)
 
   const handlePhotoUploaded = (ipfsHash: string, fileName: string) => {
-    // TODO: replace random lat, long generation with the metadata fetch (from the photo uploaded)
-    const lng = 13.0884 + Math.random() * (13.7612 - 13.0884)
-    const lat = 52.3383 + Math.random() * (52.6755 - 52.3383)
+    // TODO remove the hardcoded photo geolocation coordinates later
+    const lng = 13.3777194
+    const lat = 52.497989
 
     const newMarker: PhotoMarkerData = {
       id: Date.now().toString(),

@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react'
-import MapFullScreen from './MapFullScreen'
-import LocationSelector from './LocationSelector'
+import { useMapContext } from '../../contexts/MapContext'
 import { useLocation } from '../../hooks/useLocation'
 import { useWeather } from '../../hooks/useWeather'
+import LocationSelector from './LocationSelector'
+import MapFullScreen from './MapFullScreen'
 
 const VITE_OPENAI_KEY = import.meta.env.VITE_OPENAI_API_KEY || ''
 const VITE_OPENAI_MODEL = import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o-mini'
@@ -28,13 +29,12 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
   } = useLocation()
 
   // Weather logic extracted to custom hook
-  const {
-    weatherSummary,
-    fetchHourlyWeather,
-  } = useWeather()
+  const { weatherSummary, fetchHourlyWeather } = useWeather()
+
+  // Map context
+  const { isMapOpen, openMap, closeMap } = useMapContext()
 
   // Other state variables remain the same
-  const [openMap, setOpenMap] = useState<boolean>(false)
   const [sunsetProbability, setSunsetProbability] = useState<number | null>(null)
   const [sunsetDescription, setSunsetDescription] = useState<string>('')
   const [sunsetLoading, setSunsetLoading] = useState(false)
@@ -43,8 +43,6 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastSaltRef = useRef<string>('')
   const previousResultRef = useRef<{ location: string; probability: number | null } | null>(null)
-
-
 
   // Sunset data fetch
   const fetchSunsetData = async (loc: string, force = false) => {
@@ -115,7 +113,7 @@ RandomSeed: ${seed}`.trim()
           max_tokens: 160,
           messages: [
             { role: 'system', content: 'Output ONLY valid JSON with keys probability (int) and description (string).' },
-            { role: 'user', content: prompt }
+            { role: 'user', content: prompt },
           ],
         }),
       })
@@ -192,7 +190,7 @@ RandomSeed: ${seed}`.trim()
   const handleOpenMap = async () => {
     // Always force a fresh fetch when opening map if location changed or no data yet
     await fetchSunsetData(location, true)
-    setOpenMap(true)
+    openMap()
   }
 
   // Reset & debounce fetch when location changes (after user selection)
@@ -262,10 +260,10 @@ RandomSeed: ${seed}`.trim()
 
           {/* Map Modal */}
           <MapFullScreen
-            open={openMap}
-            onClose={() => setOpenMap(false)}
+            open={isMapOpen}
+            onClose={closeMap}
             location={location}
-            center={coords ? [coords.lon, coords.lat] : undefined}  // <-- added
+            center={coords ? [coords.lon, coords.lat] : undefined} // <-- added
             probability={sunsetProbability}
             description={sunsetDescription}
             loading={sunsetLoading}

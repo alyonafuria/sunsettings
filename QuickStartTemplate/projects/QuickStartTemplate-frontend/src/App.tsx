@@ -4,6 +4,7 @@ import { Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import Home from './Home'
 import Header from './components/layout/Header'
 import Leaderboard from './components/sunset/Leaderboard'
+import { MapProvider } from './contexts/MapContext'
 import { getAlgodConfigFromViteEnvironment, getKmdConfigFromViteEnvironment } from './utils/network/getAlgoClientConfigs'
 
 let supportedWallets: SupportedWallet[]
@@ -52,19 +53,21 @@ export default function App() {
   return (
     <SnackbarProvider maxSnack={3}>
       <WalletProvider manager={walletManager}>
-        <Router>
-          <div className="min-h-screen">
-            <Header />
-            <div className="pt-16">
-              {' '}
-              {/* Add padding top to account for fixed header */}
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/leaderboard" element={<Leaderboard />} />
-              </Routes>
+        <MapProvider>
+          <Router>
+            <div className="min-h-screen">
+              <Header />
+              <div className="pt-16">
+                {' '}
+                {/* Add padding top to account for fixed header */}
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/leaderboard" element={<Leaderboard />} />
+                </Routes>
+              </div>
             </div>
-          </div>
-        </Router>
+          </Router>
+        </MapProvider>
       </WalletProvider>
     </SnackbarProvider>
   )

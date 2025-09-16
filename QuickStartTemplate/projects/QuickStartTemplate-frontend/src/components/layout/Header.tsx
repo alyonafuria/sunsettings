@@ -1,6 +1,7 @@
 import { useWallet } from '@txnlab/use-wallet-react'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useMapContext } from '../../contexts/MapContext'
 import ConnectWallet from '../wallet/ConnectWallet'
 
 interface HeaderProps {}
@@ -10,6 +11,7 @@ const Header: React.FC<HeaderProps> = () => {
   const [openWalletModal, setOpenWalletModal] = useState(false)
   const navigate = useNavigate()
   const { activeAddress } = useWallet()
+  const { closeMap } = useMapContext()
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
@@ -25,13 +27,18 @@ const Header: React.FC<HeaderProps> = () => {
     setIsMobileMenuOpen(false)
   }
 
+  const handleLogoClick = () => {
+    closeMap() // Close map if it's open
+    handleNavigation('/')
+  }
+
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-orange-400/90 via-red-500/90 to-purple-600/90 backdrop-blur-md">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Logo/Brand */}
-            <div className="flex items-center cursor-pointer" onClick={() => handleNavigation('/')}>
+            <div className="flex items-center cursor-pointer" onClick={handleLogoClick}>
               <h1 className="text-2xl font-bold text-white">
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-200 to-pink-200">Sunsettings</span>
               </h1>

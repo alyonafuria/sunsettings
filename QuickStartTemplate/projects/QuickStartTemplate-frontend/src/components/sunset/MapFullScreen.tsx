@@ -52,13 +52,14 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
   const [photoMarkers, setPhotoMarkers] = useState<PhotoMarker[]>([
     {
       id: 'test-marker',
-      coordinates: [13.405, 52.52],
+      coordinates: [13.377, 52.497],
       ipfsHash: 'bafkreihp52znq3lewre7mmerah5g7tnrmbwrjx4zp3ywmol2e7cjo3gsdi',
       name: 'Test Photo',
       timestamp: new Date().toISOString(),
     },
   ])
   const markersRef = useRef<mapboxgl.Marker[]>([])
+  const markersAddedRef = useRef<boolean>(false)
 
   const handlePhotoUploaded = (ipfsHash: string, fileName: string) => {
     // TODO: replace random lat, long generation with the metadata fetch (from the photo uploaded)
@@ -79,6 +80,7 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
   const clearMarkers = () => {
     markersRef.current.forEach((marker) => marker.remove())
     markersRef.current = []
+    markersAddedRef.current = false
   }
 
   const addPhotoMarkers = () => {
@@ -86,6 +88,7 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
 
     console.log('Adding photo markers:', photoMarkers.length)
     clearMarkers()
+    markersAddedRef.current = true
 
     photoMarkers.forEach((photoMarker) => {
       console.log('Creating marker for:', photoMarker)
@@ -99,48 +102,33 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
         overflow: hidden;
         cursor: pointer;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        transition: transform 0.2s;
+        transition: width 0.2s, height 0.2s, margin 0.2s;
         background: white;
         display: flex;
         align-items: center;
         justify-content: center;
       `
 
-      const img = document.createElement('img')
-      img.src = `https://tan-mad-gorilla-689.mypinata.cloud/ipfs/${photoMarker.ipfsHash}`
-      img.alt = photoMarker.name
-      img.style.width = '100%'
-      img.style.height = '100%'
-      img.style.objectFit = 'cover'
-
-      img.onload = () => {
-        // append the image after it’s loaded
-        if (!el.contains(img)) el.appendChild(img)
-      }
-
-      img.onerror = () => {
-        console.error('Failed to load image:', img.src)
-        // Show a placeholder if image fails to load
-        el.innerHTML = '📷'
-        el.style.fontSize = '24px'
-        el.style.color = '#ff6b35'
-        el.style.display = 'flex'
-        el.style.alignItems = 'center'
-        el.style.justifyContent = 'center'
-      }
-
-      // Placehplder for a marker during the img load to avoid async UI flickers:
-      const mapMarker = new mapboxgl.Marker(el).setLngLat(photoMarker.coordinates).addTo(mapRef.current!)
-      markersRef.current.push(mapMarker)
-
-      el.appendChild(img)
+      // Create marker first with a placeholder
+      el.innerHTML = '📷'
+      el.style.fontSize = '24px'
+      el.style.color = '#ff6b35'
+      el.style.display = 'flex'
+      el.style.alignItems = 'center'
+      el.style.justifyContent = 'center'
 
       el.addEventListener('mouseenter', () => {
-        el.style.transform = 'scale(1.1)'
+        el.style.width = '66px'
+        el.style.height = '66px'
+        el.style.marginLeft = '-3px'
+        el.style.marginTop = '-3px'
       })
 
       el.addEventListener('mouseleave', () => {
-        el.style.transform = 'scale(1)'
+        el.style.width = '60px'
+        el.style.height = '60px'
+        el.style.marginLeft = '0px'
+        el.style.marginTop = '0px'
       })
 
       el.addEventListener('click', () => {
@@ -166,9 +154,28 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
           .addTo(mapRef.current!)
       })
 
+      // Create the marker first
       const marker = new mapboxgl.Marker(el).setLngLat(photoMarker.coordinates).addTo(mapRef.current!)
-
       markersRef.current.push(marker)
+
+      // Then load the image asynchronously
+      const img = document.createElement('img')
+      img.src = `https://tan-mad-gorilla-689.mypinata.cloud/ipfs/${photoMarker.ipfsHash}`
+      img.alt = photoMarker.name
+      img.style.width = '100%'
+      img.style.height = '100%'
+      img.style.objectFit = 'cover'
+
+      img.onload = () => {
+        // Replace placeholder with image after it's loaded
+        el.innerHTML = ''
+        el.appendChild(img)
+      }
+
+      img.onerror = () => {
+        console.error('Failed to load image:', img.src)
+        // Keep the placeholder if image fails to load
+      }
     })
   }
 
@@ -318,8 +325,10 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
 
     mapRef.current.on('style.load', () => {
       applyHighContrastBW()
-      // Add markers after style loads
-      setTimeout(() => addPhotoMarkers(), 100)
+      // Add markers after style loads - only if not already added
+      if (!markersAddedRef.current) {
+        setTimeout(() => addPhotoMarkers(), 100)
+      }
     })
     mapRef.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
 
@@ -334,6 +343,7 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
   useEffect(() => {
     console.log('PhotoMarkers useEffect triggered:', photoMarkers.length, !!mapRef.current)
     if (mapRef.current) {
+      // Always refresh markers when photoMarkers changes (for new uploads)
       addPhotoMarkers()
     }
   }, [photoMarkers])
@@ -399,14 +409,7 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
 
       {/* FlipCard overlay */}
       <div className="pointer-events-none absolute inset-0 flex justify-center items-end p-6 px-4">
-        <div className="pointer-events-auto w-full max-w-md">
-          <div className="mt-4 mb-2 flex justify-center">
-            <button className="btn btn-warning rounded-2xl w-full" onClick={() => setOpenUploadModal(true)}>
-              Upload Photo
-            </button>
-          </div>
-          <PhotoUpload openModal={openUploadModal} setModalState={setOpenUploadModal} onPhotoUploaded={handlePhotoUploaded} />
-
+        <div className="pointer-events-auto w-full max-w-md flex flex-col items-center">
           <FlipCard
             isVisible={true}
             location={location || 'Unknown'}
@@ -415,6 +418,12 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
             loading={loading}
             error={error || null}
           />
+          <div className="mt-4 mb-2 flex justify-center w-full">
+            <button className="btn btn-warning rounded-2xl w-full" onClick={() => setOpenUploadModal(true)}>
+              Upload Photo
+            </button>
+          </div>
+          <PhotoUpload openModal={openUploadModal} setModalState={setOpenUploadModal} onPhotoUploaded={handlePhotoUploaded} />
         </div>
       </div>
     </div>

@@ -11,6 +11,7 @@ interface LeaderboardEntry {
 
 const Leaderboard: React.FC = () => {
   const [openPaymentModalId, setOpenPaymentModalId] = useState<number | null>(null)
+  const [showToast, setShowToast] = useState(false)
 
   // Mock data for leaderboard entries with individual images
   const mockLeaderboard: LeaderboardEntry[] = [
@@ -108,6 +109,14 @@ const Leaderboard: React.FC = () => {
     }
   }
 
+  const handleLoadMoreClick = () => {
+    setShowToast(true)
+    // Auto-hide toast after 3 seconds
+    setTimeout(() => {
+      setShowToast(false)
+    }, 3000)
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-purple-600">
       <div className="container mx-auto px-4 py-6">
@@ -181,11 +190,24 @@ const Leaderboard: React.FC = () => {
         />
         {/* Load More Button */}
         <div className="text-center mt-8">
-          <button className="px-6 py-2 bg-white/20 backdrop-blur-md text-white font-medium rounded-full border border-white/30 hover:bg-white/30 transform hover:scale-105 transition-all duration-300">
+          <button
+            onClick={handleLoadMoreClick}
+            className="px-6 py-2 bg-white/20 backdrop-blur-md text-white font-medium rounded-full border border-white/30 hover:bg-white/30 transform hover:scale-105 transition-all duration-300"
+          >
             Load More Posts
           </button>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-right duration-300">
+          <div className="bg-white/90 backdrop-blur-md text-gray-800 px-6 py-3 rounded-lg shadow-lg border border-white/20 flex items-center gap-2">
+            <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+            <span className="font-medium">Coming soon!</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

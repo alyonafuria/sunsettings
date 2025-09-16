@@ -2,11 +2,10 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useMapContext } from '../../contexts/MapContext'
 import { useLocation } from '../../hooks/useLocation'
 import { useWeather } from '../../hooks/useWeather'
+import { PreviousResult } from '../../interfaces/sunset'
+import { createSunsetAIService } from '../../utils/sunsetAIService'
 import LocationSelector from './LocationSelector'
 import MapFullScreen from './MapFullScreen'
-
-const VITE_OPENAI_KEY = import.meta.env.VITE_OPENAI_API_KEY || ''
-const VITE_OPENAI_MODEL = import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o-mini'
 
 interface HeroSectionProps {}
 
@@ -41,12 +40,12 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
   const [sunsetError, setSunsetError] = useState<string | null>(null)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const lastSaltRef = useRef<string>('')
-  const previousResultRef = useRef<{ location: string; probability: number | null } | null>(null)
+  const previousResultRef = useRef<PreviousResult | null>(null)
+  const sunsetAIService = createSunsetAIService()
 
   // Sunset data fetch
   const fetchSunsetData = async (loc: string, force = false) => {
-    if (!VITE_OPENAI_KEY || !loc) return
+    if (!sunsetAIService || !loc) return
 
     setSunsetLoading(true)
     setSunsetError(null)
@@ -73,111 +72,49 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
       wxSummary = 'No coordinates available; cannot fetch weather.'
     }
 
-    // Limit length to keep prompt efficient
-    const truncatedWxSummary = wxSummary.length > 220 ? wxSummary.slice(0, 220) : wxSummary
-
-    const callModel = async (seed: string) => {
-      const nowISO = new Date().toISOString()
-
-      // Provide clearer analytical instructions; model must base output ONLY on weather context
-      const prompt = `
-You are an analyst producing a sunset quality estimate ONLY from the provided weather features.
-
-WeatherFeatures (parsed summary, semicolon separated, may omit some):
-${truncatedWxSummary || 'avg_cloud:NA; avg_humidity:NA; avg_temp:NA; precip_prob_max:NA; precip_total:NA; hours_analyzed:NA'}
-
-Analysis rules (DO NOT output this section, just use it):
-- Ideal vivid sunset: broken/moderate clouds (30-70%) + low precipitation probability (<25%) + some humidity (35-70%) -> probability 80-95.
-- Overcast (>80% clouds) or heavy precip (precip_prob_max >60% or precip_total >2mm) -> probability 35-55 (lower if both).
-- Very clear (<10% clouds) often reduces dramatic colors -> probability 55-70 unless humidity very favorable.
-- Extremely hazy indicator: high humidity (>90%) + high clouds (>70%) + precip_prob_max>40% -> probability 30-50.
-- Probability must be INT 0-100. Avoid defaulting to 75. Vary based on metrics. Seed only breaks ties.
-- Description: <=160 chars, concise, no quotes, mention key drivers (e.g. "scattered mid clouds", "dry clear air", "high overcast dampens colors").
-
-Return ONLY compact JSON (no markdown, no backticks, no commentary):
-{"probability": <int 0-100>, "description":"<text>"}
-
-Location: ${loc}
-TimeUTC: ${nowISO}
-RandomSeed: ${seed}`.trim()
-
-      const r = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${VITE_OPENAI_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: VITE_OPENAI_MODEL,
-          temperature: 0.55,
-          max_tokens: 160,
-          messages: [
-            { role: 'system', content: 'Output ONLY valid JSON with keys probability (int) and description (string).' },
-            { role: 'user', content: prompt },
-          ],
-        }),
-      })
-      if (!r.ok) throw new Error(`HTTP ${r.status}`)
-      const data = await r.json()
-      const raw = data?.choices?.[0]?.message?.content?.trim() || ''
-      // Debug raw
-      // eslint-disable-next-line no-console
-      console.debug('[SunsetAI raw]', raw)
-      let parsed: any = null
-      try {
-        parsed = JSON.parse(raw)
-      } catch {
-        const m = raw.match(/\{[\s\S]*\}/)
-        if (m) {
-          try {
-            parsed = JSON.parse(m[0])
-          } catch {}
-        }
-      }
-      if (!parsed || typeof parsed !== 'object') throw new Error('Bad JSON')
-      return parsed
-    }
-
     try {
       const seed1 = Math.random().toString(36).slice(2, 10)
-      let parsed = await callModel(seed1)
+      let result = await sunsetAIService.analyzeSunset({
+        location: loc,
+        weatherSummary: wxSummary,
+        seed: seed1,
+      })
 
-      const normalizeProb = (p: any) => (typeof p === 'number' ? Math.min(100, Math.max(0, Math.round(p))) : null)
-
-      let prob = normalizeProb(parsed.probability)
+      let prob = sunsetAIService.normalizeProbability(result.probability)
 
       const prev = previousResultRef.current
-      const needsRetry = prob === 75 || (prev && prev.location === loc && typeof prev.probability === 'number' && prev.probability === prob)
+      const needsRetry = sunsetAIService.shouldRetry(prob, prev, loc)
 
       if (needsRetry) {
         try {
           const seed2 = Math.random().toString(36).slice(2, 10)
-          const retryParsed = await callModel(seed2)
-          const retryProb = normalizeProb(retryParsed.probability)
+          const retryResult = await sunsetAIService.analyzeSunset({
+            location: loc,
+            weatherSummary: wxSummary,
+            seed: seed2,
+          })
+          const retryProb = sunsetAIService.normalizeProbability(retryResult.probability)
           // Use retry if it yields a different or non-75 value
           if (retryProb !== null && (retryProb !== prob || retryProb !== 75)) {
-            parsed = retryParsed
+            result = retryResult
             prob = retryProb
           }
-        } catch {}
+        } catch {
+          // Continue with original result if retry fails
+        }
       }
 
       if (prob === null || prob === 75) {
-        const hash = Array.from(loc + wxSummary).reduce((a, c) => (a * 131 + c.charCodeAt(0)) % 1000003, 7)
-        const base = 40 + (hash % 50)
-        const jitter = Math.floor(Math.random() * 11)
-        let synthetic = base + jitter
-        if (synthetic < 55 && Math.random() < 0.4) synthetic += 20
-        prob = Math.min(96, synthetic)
-        if (!parsed.description || typeof parsed.description !== 'string') {
-          parsed.description = 'Estimated locally from weather context.'
+        prob = sunsetAIService.generateFallbackProbability(loc, wxSummary)
+        if (!result.description || typeof result.description !== 'string') {
+          result.description = 'Estimated locally from weather context.'
         }
         // eslint-disable-next-line no-console
         console.debug('[SunsetAI fallback probability]', prob)
       }
 
       setSunsetProbability(prob)
-      setSunsetDescription(typeof parsed.description === 'string' ? parsed.description.slice(0, 160) : 'No description')
+      setSunsetDescription(typeof result.description === 'string' ? result.description.slice(0, 160) : 'No description')
       previousResultRef.current = { location: loc, probability: prob }
     } catch (e: any) {
       setSunsetError(e.message || 'Fetch failed')
@@ -248,13 +185,13 @@ RandomSeed: ${seed}`.trim()
             <div className="mb-6">
               <button
                 onClick={handleOpenMap}
-                disabled={sunsetLoading || !VITE_OPENAI_KEY}
+                disabled={sunsetLoading || !sunsetAIService}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500/80 to-pink-500/80 backdrop-blur-md rounded-full text-white border border-white/30 hover:from-purple-600/90 hover:to-pink-600/90 hover:shadow-lg transition-all duration-300 disabled:opacity-50"
               >
                 {sunsetLoading ? <span className="loading loading-spinner loading-sm" /> : 'What are my chances?'}
               </button>
               {sunsetError && <p className="text-xs text-red-200 mt-2">{sunsetError}</p>}
-              {!VITE_OPENAI_KEY && <p className="text-xs text-red-200 mt-2">VITE_OPENAI_API_KEY missing</p>}
+              {!sunsetAIService && <p className="text-xs text-red-200 mt-2">VITE_OPENAI_API_KEY missing</p>}
             </div>
           )}
 

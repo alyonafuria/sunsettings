@@ -2,8 +2,8 @@ import { SupportedWallet, WalletId, WalletManager, WalletProvider } from '@txnla
 import { SnackbarProvider } from 'notistack'
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import Home from './Home'
-import Header from './components/Header'
-import Leaderboard from './components/Leaderboard'
+import Header from './components/layout/Header'
+import Leaderboard from './components/sunset/Leaderboard'
 import { getAlgodConfigFromViteEnvironment, getKmdConfigFromViteEnvironment } from './utils/network/getAlgoClientConfigs'
 
 let supportedWallets: SupportedWallet[]

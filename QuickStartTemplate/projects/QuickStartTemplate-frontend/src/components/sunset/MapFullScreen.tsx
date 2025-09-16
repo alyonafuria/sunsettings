@@ -1,16 +1,13 @@
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import React, { useEffect, useRef, useState } from 'react'
+import { applyHighContrastBW } from '../../utils/mapStyles'
 import FlipCard from '../ui/FlipCard'
+import { PhotoMarkerData, usePhotoMarkers } from './PhotoMarker'
+import PhotoModal from './PhotoPopup'
 import PhotoUpload from './PhotoUpload'
 
-interface PhotoMarker {
-  id: string
-  coordinates: [number, number]
-  ipfsHash: string
-  name: string
-  timestamp: string
-}
+// Using PhotoMarkerData from the PhotoMarker component
 
 interface MapFullScreenProps {
   open: boolean
@@ -49,7 +46,7 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
   const [showCard, setShowCard] = useState(true)
   const locationLabel = center ? `${center[1].toFixed(4)}, ${center[0].toFixed(4)}` : 'Berlin'
   const [openUploadModal, setOpenUploadModal] = useState<boolean>(false)
-  const [photoMarkers, setPhotoMarkers] = useState<PhotoMarker[]>([
+  const [photoMarkers, setPhotoMarkers] = useState<PhotoMarkerData[]>([
     {
       id: 'test-marker',
       coordinates: [13.377, 52.497],
@@ -58,15 +55,15 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
       timestamp: new Date().toISOString(),
     },
   ])
-  const markersRef = useRef<mapboxgl.Marker[]>([])
-  const markersAddedRef = useRef<boolean>(false)
+  const [selectedPhoto, setSelectedPhoto] = useState<PhotoMarkerData | null>(null)
+  const [showPhotoModal, setShowPhotoModal] = useState<boolean>(false)
 
   const handlePhotoUploaded = (ipfsHash: string, fileName: string) => {
-    // TODO: replace random lat, long generation with the metadata fetch (from the photo uploaded)
-    const lng = 13.0884 + Math.random() * (13.7612 - 13.0884)
-    const lat = 52.3383 + Math.random() * (52.6755 - 52.3383)
+    // TODO remove the hardcoded photo geolocation coordinates later
+    const lng = 13.3777194
+    const lat = 52.497989
 
-    const newMarker: PhotoMarker = {
+    const newMarker: PhotoMarkerData = {
       id: Date.now().toString(),
       coordinates: [lng, lat],
       ipfsHash,
@@ -77,107 +74,13 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
     setPhotoMarkers((prev) => [...prev, newMarker])
   }
 
-  const clearMarkers = () => {
-    markersRef.current.forEach((marker) => marker.remove())
-    markersRef.current = []
-    markersAddedRef.current = false
+  const handlePhotoClick = (photoMarker: PhotoMarkerData) => {
+    setSelectedPhoto(photoMarker)
+    setShowPhotoModal(true)
   }
 
-  const addPhotoMarkers = () => {
-    if (!mapRef.current) return
-
-    console.log('Adding photo markers:', photoMarkers.length)
-    clearMarkers()
-    markersAddedRef.current = true
-
-    photoMarkers.forEach((photoMarker) => {
-      console.log('Creating marker for:', photoMarker)
-      const el = document.createElement('div')
-      el.className = 'photo-marker'
-      el.style.cssText = `
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        border: 3px solid #ff6b35;
-        overflow: hidden;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        transition: width 0.2s, height 0.2s, margin 0.2s;
-        background: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      `
-
-      // Create marker first with a placeholder
-      el.innerHTML = '📷'
-      el.style.fontSize = '24px'
-      el.style.color = '#ff6b35'
-      el.style.display = 'flex'
-      el.style.alignItems = 'center'
-      el.style.justifyContent = 'center'
-
-      el.addEventListener('mouseenter', () => {
-        el.style.width = '66px'
-        el.style.height = '66px'
-        el.style.marginLeft = '-3px'
-        el.style.marginTop = '-3px'
-      })
-
-      el.addEventListener('mouseleave', () => {
-        el.style.width = '60px'
-        el.style.height = '60px'
-        el.style.marginLeft = '0px'
-        el.style.marginTop = '0px'
-      })
-
-      el.addEventListener('click', () => {
-        const popup = new mapboxgl.Popup({ offset: 25 })
-          .setLngLat(photoMarker.coordinates)
-          .setHTML(
-            `
-            <div style="max-width: 200px;">
-              <img 
-                src="https://tan-mad-gorilla-689.mypinata.cloud/ipfs/${photoMarker.ipfsHash}" 
-                alt="${photoMarker.name}"
-                style="width: 100%; border-radius: 8px; margin-bottom: 8px;"
-              />
-              <p style="margin: 0; font-size: 12px; color: #666;">
-                ${photoMarker.name}
-              </p>
-              <p style="margin: 4px 0 0 0; font-size: 10px; color: #999;">
-                ${new Date(photoMarker.timestamp).toLocaleString()}
-              </p>
-            </div>
-          `,
-          )
-          .addTo(mapRef.current!)
-      })
-
-      // Create the marker first
-      const marker = new mapboxgl.Marker(el).setLngLat(photoMarker.coordinates).addTo(mapRef.current!)
-      markersRef.current.push(marker)
-
-      // Then load the image asynchronously
-      const img = document.createElement('img')
-      img.src = `https://tan-mad-gorilla-689.mypinata.cloud/ipfs/${photoMarker.ipfsHash}`
-      img.alt = photoMarker.name
-      img.style.width = '100%'
-      img.style.height = '100%'
-      img.style.objectFit = 'cover'
-
-      img.onload = () => {
-        // Replace placeholder with image after it's loaded
-        el.innerHTML = ''
-        el.appendChild(img)
-      }
-
-      img.onerror = () => {
-        console.error('Failed to load image:', img.src)
-        // Keep the placeholder if image fails to load
-      }
-    })
-  }
+  // Use the photo markers hook
+  const { clearMarkers, addPhotoMarkers } = usePhotoMarkers(photoMarkers, handlePhotoClick)
 
   const lastCenterRef = useRef<[number, number] | null>(null)
 
@@ -201,134 +104,10 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
       lastCenterRef.current = center
     }
 
-    const applyHighContrastBW = () => {
-      if (!mapRef.current) return
-      const map = mapRef.current
-      const layers = map.getStyle()?.layers || []
-
-      // Palette
-      const LAND = '#ffffff'
-      const LAND_ALT = '#f2f2f2'
-      const WATER = '#e6e6e6'
-      const ROAD_MAIN = '#000000'
-      const ROAD_SEC = '#222222'
-      const OUTLINE = '#000000'
-      const BUILDING = '#d0d0d0'
-      const PARK = '#ededed'
-      const TEXT = '#000000'
-      const ICON = '#111111'
-
-      layers.forEach((l) => {
-        const { id, type } = l
-        try {
-          // Background
-          if (type === 'background') {
-            map.setPaintProperty(id, 'background-color', LAND)
-          }
-
-          const idLower = id.toLowerCase()
-
-          // Water
-          if (idLower.includes('water')) {
-            if (type === 'fill') map.setPaintProperty(id, 'fill-color', WATER)
-            if (type === 'line') map.setPaintProperty(id, 'line-color', WATER)
-          }
-
-          // Parks / green areas
-          if (idLower.includes('park') || idLower.includes('green') || idLower.includes('landuse')) {
-            if (type === 'fill') map.setPaintProperty(id, 'fill-color', PARK)
-          }
-
-          // Buildings
-          if (idLower.includes('building')) {
-            if (type === 'fill') {
-              map.setPaintProperty(id, 'fill-color', BUILDING)
-              map.setPaintProperty(id, 'fill-outline-color', OUTLINE)
-            }
-          }
-
-          // Roads
-          if (idLower.includes('road') || idLower.includes('street') || idLower.includes('highway')) {
-            if (type === 'line') {
-              const main = idLower.includes('motorway') || idLower.includes('trunk') || idLower.includes('primary')
-              map.setPaintProperty(id, 'line-color', main ? ROAD_MAIN : ROAD_SEC)
-              // Boost contrast by widening slighty (ignore failures)
-              try {
-                const currentWidth = map.getPaintProperty(id, 'line-width')
-                if (typeof currentWidth === 'number') {
-                  map.setPaintProperty(id, 'line-width', Math.max(currentWidth, main ? 2.4 : 1.4))
-                } else {
-                  map.setPaintProperty(id, 'line-width', main ? 2.4 : 1.4)
-                }
-              } catch {}
-            }
-          }
-
-          // Generic fills (landuse etc.)
-          if (type === 'fill' && !idLower.includes('water') && !idLower.includes('park') && !idLower.includes('building')) {
-            map.setPaintProperty(id, 'fill-color', LAND_ALT)
-            try {
-              map.setPaintProperty(id, 'fill-outline-color', '#bfbfbf')
-            } catch {}
-          }
-
-          // Lines not already touched
-          if (type === 'line' && !idLower.includes('road') && !idLower.includes('water')) {
-            map.setPaintProperty(id, 'line-color', '#4d4d4d')
-          }
-
-          // Symbols (labels/icons)
-          if (type === 'symbol') {
-            try {
-              map.setPaintProperty(id, 'text-color', TEXT)
-              map.setPaintProperty(id, 'icon-color', ICON)
-              map.setPaintProperty(id, 'text-halo-color', '#ffffff')
-              map.setPaintProperty(id, 'text-halo-width', 1.2)
-              map.setPaintProperty(id, 'text-halo-blur', 0.2)
-            } catch {}
-          }
-
-          // Circles (POIs)
-          if (type === 'circle') {
-            map.setPaintProperty(id, 'circle-color', '#111111')
-            try {
-              map.setPaintProperty(id, 'circle-stroke-color', '#ffffff')
-              map.setPaintProperty(id, 'circle-stroke-width', 0.6)
-            } catch {}
-          }
-
-          // Hillshade
-          if (type === 'hillshade') {
-            try {
-              map.setPaintProperty(id, 'hillshade-shadow-color', '#333333')
-              map.setPaintProperty(id, 'hillshade-highlight-color', '#bbbbbb')
-            } catch {}
-          }
-
-          // Desaturate where possible
-          const saturationProps = ['fill-saturation', 'line-saturation', 'background-saturation', 'circle-saturation', 'symbol-saturation']
-          saturationProps.forEach((p) => {
-            try {
-              map.setPaintProperty(id, p as any, -1)
-            } catch {}
-          })
-          // Remove hue/brightness variance
-          const adjustments = ['fill-brightness-min', 'fill-brightness-max', 'line-brightness-min', 'line-brightness-max']
-          adjustments.forEach((p) => {
-            try {
-              map.setPaintProperty(id, p as any, 0)
-            } catch {}
-          })
-        } catch {}
-      })
-    }
-
     mapRef.current.on('style.load', () => {
-      applyHighContrastBW()
-      // Add markers after style loads - only if not already added
-      if (!markersAddedRef.current) {
-        setTimeout(() => addPhotoMarkers(), 100)
-      }
+      applyHighContrastBW(mapRef.current!)
+      // Add markers after style loads
+      setTimeout(() => addPhotoMarkers(mapRef.current!), 100)
     })
     mapRef.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
 
@@ -340,13 +119,12 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
     }
   }, [open, center])
 
+  // Effect to add markers when photoMarkers change (for new uploads)
   useEffect(() => {
-    console.log('PhotoMarkers useEffect triggered:', photoMarkers.length, !!mapRef.current)
-    if (mapRef.current) {
-      // Always refresh markers when photoMarkers changes (for new uploads)
-      addPhotoMarkers()
+    if (mapRef.current && photoMarkers.length > 0) {
+      addPhotoMarkers(mapRef.current)
     }
-  }, [photoMarkers])
+  }, [photoMarkers, addPhotoMarkers])
 
   // NEW effect to fly when center changes after initial load
   useEffect(() => {
@@ -426,6 +204,9 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
           <PhotoUpload openModal={openUploadModal} setModalState={setOpenUploadModal} onPhotoUploaded={handlePhotoUploaded} />
         </div>
       </div>
+
+      {/* Photo Modal */}
+      <PhotoModal isOpen={showPhotoModal} photo={selectedPhoto} onClose={() => setShowPhotoModal(false)} />
     </div>
   )
 }

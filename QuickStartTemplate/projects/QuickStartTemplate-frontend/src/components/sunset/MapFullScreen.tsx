@@ -2,6 +2,7 @@ import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import React, { useEffect, useRef, useState } from 'react'
 import FlipCard from '../ui/FlipCard'
+import PhotoModal from './PhotoPopup'
 import PhotoUpload from './PhotoUpload'
 
 interface PhotoMarker {
@@ -60,6 +61,8 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
   ])
   const markersRef = useRef<mapboxgl.Marker[]>([])
   const markersAddedRef = useRef<boolean>(false)
+  const [selectedPhoto, setSelectedPhoto] = useState<PhotoMarker | null>(null)
+  const [showPhotoModal, setShowPhotoModal] = useState<boolean>(false)
 
   const handlePhotoUploaded = (ipfsHash: string, fileName: string) => {
     // TODO: replace random lat, long generation with the metadata fetch (from the photo uploaded)
@@ -75,6 +78,11 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
     }
 
     setPhotoMarkers((prev) => [...prev, newMarker])
+  }
+
+  const handlePhotoClick = (photoMarker: PhotoMarker) => {
+    setSelectedPhoto(photoMarker)
+    setShowPhotoModal(true)
   }
 
   const clearMarkers = () => {
@@ -132,26 +140,7 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
       })
 
       el.addEventListener('click', () => {
-        const popup = new mapboxgl.Popup({ offset: 25 })
-          .setLngLat(photoMarker.coordinates)
-          .setHTML(
-            `
-            <div style="max-width: 200px;">
-              <img 
-                src="https://tan-mad-gorilla-689.mypinata.cloud/ipfs/${photoMarker.ipfsHash}" 
-                alt="${photoMarker.name}"
-                style="width: 100%; border-radius: 8px; margin-bottom: 8px;"
-              />
-              <p style="margin: 0; font-size: 12px; color: #666;">
-                ${photoMarker.name}
-              </p>
-              <p style="margin: 4px 0 0 0; font-size: 10px; color: #999;">
-                ${new Date(photoMarker.timestamp).toLocaleString()}
-              </p>
-            </div>
-          `,
-          )
-          .addTo(mapRef.current!)
+        handlePhotoClick(photoMarker)
       })
 
       // Create the marker first
@@ -426,6 +415,9 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
           <PhotoUpload openModal={openUploadModal} setModalState={setOpenUploadModal} onPhotoUploaded={handlePhotoUploaded} />
         </div>
       </div>
+
+      {/* Photo Modal */}
+      <PhotoModal isOpen={showPhotoModal} photo={selectedPhoto} onClose={() => setShowPhotoModal(false)} />
     </div>
   )
 }

@@ -20,7 +20,8 @@ const FlipCard: React.FC<FlipCardProps> = ({ isVisible, location, probability, d
 
   if (!isVisible) return null
 
-  const handleFlip = () => {
+  const handleCardClick = (e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent event from bubbling up to parent elements
     if (loading) return
     if (isClosed) {
       setIsClosed(false)
@@ -45,10 +46,10 @@ const FlipCard: React.FC<FlipCardProps> = ({ isVisible, location, probability, d
       }`}
     >
       <div
+        onClick={handleCardClick}
         className={`relative w-full h-full transition-transform duration-700 transform-style-preserve-3d cursor-pointer ${
           isFlipped ? 'rotate-y-180' : ''
         }`}
-        onClick={handleFlip}
       >
         {/* Front Side - Probability */}
         <div className="absolute w-full h-full backface-hidden">
@@ -56,7 +57,10 @@ const FlipCard: React.FC<FlipCardProps> = ({ isVisible, location, probability, d
             {/* Close Button */}
             {!isClosed && (
               <button
-                onClick={handleClose}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClose(e);
+                }}
                 className="absolute top-3 right-3 w-6 h-6 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors duration-200 z-10"
                 aria-label="Close card"
               >
@@ -108,7 +112,10 @@ const FlipCard: React.FC<FlipCardProps> = ({ isVisible, location, probability, d
             {/* Close Button */}
             {!isClosed && (
               <button
-                onClick={handleClose}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClose(e);
+                }}
                 className="absolute top-3 right-3 w-6 h-6 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors duration-200 z-10"
                 aria-label="Close card"
               >

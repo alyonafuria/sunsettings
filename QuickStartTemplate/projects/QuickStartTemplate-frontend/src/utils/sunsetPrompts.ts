@@ -92,7 +92,7 @@ Scoring (apply exactly in order):
    Round to nearest INT, then clamp to 0..100.
 
 Description:
-- ≤300 chars, concise, no inner quotes; mention 3–4 key drivers (e.g., solid low overcast blocks light; showers nearby; high humidity haze; or broken mid clouds with dry air).
+- ≤200 chars, concise, no inner quotes; mention 3–4 key drivers (e.g., solid low overcast blocks light; showers nearby; high humidity haze; or broken mid clouds with dry air).
 
 Return ONLY compact JSON (no markdown, no backticks, no commentary):
 {"probability": <int 0-100>, "description":"<text>"}

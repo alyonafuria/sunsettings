@@ -21,10 +21,16 @@ interface MapFullScreenProps {
   onRefresh?: () => void
 }
 
+// Get environment variables with fallbacks
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
+const PINATA_JWT = import.meta.env.VITE_PINATA_JWT || ''
+
 if (!MAPBOX_TOKEN) {
-  // eslint-disable-next-line no-console
   console.warn('Mapbox token missing. Set VITE_MAPBOX_TOKEN in .env.')
+}
+
+if (!PINATA_JWT) {
+  console.warn('Pinata JWT token missing. Set VITE_PINATA_JWT in .env to enable photo uploads.')
 }
 
 mapboxgl.accessToken = MAPBOX_TOKEN
@@ -46,41 +52,156 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
   const [showCard, setShowCard] = useState(true)
   const locationLabel = center ? `${center[1].toFixed(4)}, ${center[0].toFixed(4)}` : 'Berlin'
   const [openUploadModal, setOpenUploadModal] = useState<boolean>(false)
-  const [photoMarkers, setPhotoMarkers] = useState<PhotoMarkerData[]>([
-    {
-      id: 'test-marker',
-      coordinates: [13.377, 52.497],
-      ipfsHash: 'bafkreihp52znq3lewre7mmerah5g7tnrmbwrjx4zp3ywmol2e7cjo3gsdi',
-      name: 'Test Photo',
-      timestamp: new Date().toISOString(),
-    },
-  ])
-  const [selectedPhoto, setSelectedPhoto] = useState<PhotoMarkerData | null>(null)
-  const [showPhotoModal, setShowPhotoModal] = useState<boolean>(false)
+  const [photoMarkers, setPhotoMarkers] = useState<Array<PhotoMarkerData & { count?: number; photos?: PhotoMarkerData[] }>>([]);
+  const [allPhotos, setAllPhotos] = useState<PhotoMarkerData[]>([]);
+  const [selectedPhoto, setSelectedPhoto] = useState<PhotoMarkerData | null>(null);
+  const [showPhotoModal, setShowPhotoModal] = useState<boolean>(false);
+  const [showPhotoCarousel, setShowPhotoCarousel] = useState<boolean>(false);
+  const [photosAtLocation, setPhotosAtLocation] = useState<PhotoMarkerData[]>([]);
+  const [isLoadingPhotos, setIsLoadingPhotos] = useState<boolean>(false)
+  const [photoError, setPhotoError] = useState<string | null>(null)
+
+  // Helper function to check if two coordinates are approximately the same
+  const areCoordinatesEqual = (coord1: [number, number], coord2: [number, number], precision = 4): boolean => {
+    const [lng1, lat1] = coord1;
+    const [lng2, lat2] = coord2;
+    const factor = Math.pow(10, precision);
+    return (
+      Math.round(lng1 * factor) / factor === Math.round(lng2 * factor) / factor &&
+      Math.round(lat1 * factor) / factor === Math.round(lat2 * factor) / factor
+    );
+  };
+
+  // Group photos by location
+  const groupPhotosByLocation = (photos: PhotoMarkerData[]): PhotoMarkerData[] => {
+    const groups: { [key: string]: PhotoMarkerData & { count: number; photos: PhotoMarkerData[] } } = {};
+    
+    photos.forEach(photo => {
+      const existingGroup = Object.values(groups).find(group => 
+        areCoordinatesEqual(group.coordinates, photo.coordinates)
+      );
+      
+      if (existingGroup) {
+        existingGroup.count += 1;
+        existingGroup.photos.push(photo);
+        // Keep the most recent photo as the main one
+        if (new Date(photo.timestamp) > new Date(existingGroup.timestamp)) {
+          existingGroup.id = photo.id;
+          existingGroup.name = photo.name;
+          existingGroup.ipfsHash = photo.ipfsHash;
+          existingGroup.timestamp = photo.timestamp;
+        }
+      } else {
+        const key = `${photo.coordinates[0]},${photo.coordinates[1]}`;
+        groups[key] = {
+          ...photo,
+          count: 1,
+          photos: [photo]
+        };
+      }
+    });
+    
+    return Object.values(groups);
+  };
+
+  // Fetch photos from Pinata when the component mounts
+  useEffect(() => {
+    const fetchPinnedPhotos = async () => {
+      if (!open) return
+      
+      setIsLoadingPhotos(true)
+      setPhotoError(null)
+      
+      try {
+        if (!PINATA_JWT) {
+          throw new Error('Pinata JWT token is not configured. Set VITE_PINATA_JWT in .env')
+        }
+        
+        const response = await fetch('https://api.pinata.cloud/data/pinList?status=pinned', {
+          headers: {
+            'Authorization': `Bearer ${PINATA_JWT}`
+          }
+        })
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch photos: ${response.statusText}`)
+        }
+        
+        const data = await response.json()
+        
+        // Transform Pinata response to PhotoMarkerData format
+        const markers: PhotoMarkerData[] = data.rows
+          .filter((pin: any) => pin.metadata?.keyvalues?.coordinates)
+          .map((pin: any) => {
+            // Parse coordinates from the metadata
+            const [lng, lat] = pin.metadata.keyvalues.coordinates
+              .split(',')
+              .map((coord: string) => parseFloat(coord.trim()))
+              
+            return {
+              id: pin.ipfs_pin_hash,
+              coordinates: [lng, lat] as [number, number],
+              ipfsHash: pin.ipfs_pin_hash,
+              name: pin.metadata?.name || 'Untitled Photo',
+              timestamp: new Date(pin.date_pinned).toISOString()
+            }
+          });
+        
+        // Group photos by location and update state
+        const groupedMarkers = groupPhotosByLocation(markers);
+        setPhotoMarkers(groupedMarkers);
+        
+        // Store all photos (ungrouped) for the photo viewer
+        setAllPhotos(markers);
+      } catch (error) {
+        console.error('Error fetching photos from Pinata:', error)
+        setPhotoError('Failed to load photos. Please try again later.')
+      } finally {
+        setIsLoadingPhotos(false)
+      }
+    }
+    
+    fetchPinnedPhotos()
+  }, [open])
 
   const handlePhotoUploaded = (ipfsHash: string, fileName: string) => {
-    // TODO remove the hardcoded photo geolocation coordinates later
-    const lng = 13.3777194
-    const lat = 52.497989
+    // Use the current map center for the new photo
+    const [lng, lat] = mapRef.current?.getCenter().toArray() || center || [13.3777194, 52.497989]
 
     const newMarker: PhotoMarkerData = {
-      id: Date.now().toString(),
+      id: ipfsHash,
       coordinates: [lng, lat],
       ipfsHash,
       name: fileName,
       timestamp: new Date().toISOString(),
     }
 
-    setPhotoMarkers((prev) => [...prev, newMarker])
+    // Add the new photo and regroup all photos
+    const updatedPhotos = [...allPhotos, newMarker];
+    const groupedMarkers = groupPhotosByLocation(updatedPhotos);
+    
+    setAllPhotos(updatedPhotos);
+    setPhotoMarkers(groupedMarkers);
   }
 
-  const handlePhotoClick = (photoMarker: PhotoMarkerData) => {
-    setSelectedPhoto(photoMarker)
-    setShowPhotoModal(true)
+  const handlePhotoClick = (photoMarker: PhotoMarkerData & { count?: number; photos?: PhotoMarkerData[] }) => {
+    if (photoMarker.count && photoMarker.count > 1 && photoMarker.photos) {
+      // Show carousel if there are multiple photos at this location
+      setPhotosAtLocation(photoMarker.photos);
+      setShowPhotoCarousel(true);
+      setSelectedPhoto(photoMarker); // Set the main photo as selected
+    } else {
+      // Show single photo
+      setSelectedPhoto(photoMarker);
+      setShowPhotoModal(true);
+    }
   }
 
-  // Use the photo markers hook
-  const { clearMarkers, addPhotoMarkers } = usePhotoMarkers(photoMarkers, handlePhotoClick)
+  // Use the photo markers hook with proper typing
+  const { clearMarkers, addPhotoMarkers } = usePhotoMarkers(
+    photoMarkers as PhotoMarkerData[], 
+    handlePhotoClick as (photoMarker: PhotoMarkerData) => void
+  )
 
   const lastCenterRef = useRef<[number, number] | null>(null)
 
@@ -196,16 +317,40 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
             loading={loading}
             error={error || null}
           />
+          
+          {/* Photo loading/error status */}
+          {isLoadingPhotos && (
+            <div className="w-full p-3 mb-2 text-center text-sm text-blue-600 bg-blue-50 rounded-lg">
+              Loading photos...
+            </div>
+          )}
+          {photoError && (
+            <div className="w-full p-3 mb-2 text-center text-sm text-red-600 bg-red-50 rounded-lg">
+              {photoError}
+            </div>
+          )}
+          
           <div className="mt-4 mb-2 flex justify-center w-full">
-            <button className="btn btn-warning rounded-2xl w-full" onClick={() => setOpenUploadModal(true)}>
-              Upload Photo
+            <button 
+              className="btn btn-warning rounded-2xl w-full" 
+              onClick={() => setOpenUploadModal(true)}
+              disabled={isLoadingPhotos}
+            >
+              {isLoadingPhotos ? 'Loading...' : 'Upload Photo'}
             </button>
           </div>
-          <PhotoUpload openModal={openUploadModal} setModalState={setOpenUploadModal} onPhotoUploaded={handlePhotoUploaded} />
         </div>
       </div>
 
-      {/* Photo Modal */}
+      {/* Photo Upload Modal */}
+      <PhotoUpload 
+        open={openUploadModal}
+        onClose={() => setOpenUploadModal(false)}
+        onUploaded={handlePhotoUploaded} 
+        coordinates={mapRef.current?.getCenter().toArray() as [number, number] || center} 
+      />
+      
+      {/* Photo View Modal */}
       <PhotoModal isOpen={showPhotoModal} photo={selectedPhoto} onClose={() => setShowPhotoModal(false)} />
     </div>
   )

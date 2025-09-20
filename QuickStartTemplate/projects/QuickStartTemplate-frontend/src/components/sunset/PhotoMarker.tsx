@@ -7,6 +7,8 @@ export interface PhotoMarkerData {
   ipfsHash: string
   name: string
   timestamp: string
+  count?: number
+  photos?: PhotoMarkerData[]
 }
 
 interface PhotoMarkerProps {
@@ -43,20 +45,61 @@ export class PhotoMarker {
       overflow: hidden;
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      transition: width 0.2s, height 0.2s, margin 0.2s;
+      transition: all 0.2s ease;
       background: white;
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
     `
 
-    // Create marker with placeholder
-    el.innerHTML = '📷'
-    el.style.fontSize = '24px'
-    el.style.color = '#ff6b35'
-    el.style.display = 'flex'
-    el.style.alignItems = 'center'
-    el.style.justifyContent = 'center'
+    // Create marker with placeholder or counter
+    if (this.photoMarkerData.count && this.photoMarkerData.count > 1) {
+      // Show counter for multiple photos
+      el.innerHTML = `
+        <div style="width: 100%; height: 100%; position: relative;">
+          <div style="
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            background: #ff6b35;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          ">
+            ${this.photoMarkerData.count}
+          </div>
+          <div style="
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            color: #ff6b35;
+            font-size: 20px;
+          ">
+            📷
+          </div>
+        </div>
+      `;
+    } else {
+      // Single photo marker
+      el.innerHTML = '📷';
+      el.style.fontSize = '24px';
+      el.style.color = '#ff6b35';
+      el.style.display = 'flex';
+      el.style.alignItems = 'center';
+      el.style.justifyContent = 'center';
+    }
 
     // Add hover effects
     el.addEventListener('mouseenter', () => {
@@ -82,6 +125,11 @@ export class PhotoMarker {
   }
 
   private loadImage(): void {
+    // Only load image if there's a hash and it's not a counter marker
+    if (!this.photoMarkerData.ipfsHash || (this.photoMarkerData.count && this.photoMarkerData.count > 1)) {
+      return;
+    }
+    
     const img = document.createElement('img')
     img.src = `https://tan-mad-gorilla-689.mypinata.cloud/ipfs/${this.photoMarkerData.ipfsHash}`
     img.alt = this.photoMarkerData.name

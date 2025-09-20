@@ -5,17 +5,14 @@
       "name": "ROOT"
     },
     {
-      "path": "./projects/QuickStartTemplate-contracts"
+      "path": "./QuickStartTemplate-contracts"
     },
     {
-      "path": "./projects/QuickStartTemplate-frontend"
+      "path": "./frontend"
     }
   ],
   "settings": {
-    "files.exclude": {
-      "projects/": true
-    },
-    "jest.disabledWorkspaceFolders": ["ROOT", "projects"],
+    "jest.disabledWorkspaceFolders": ["ROOT"],
     "dotenv.enableAutocloaking": false
   },
   "extensions": {
@@ -58,7 +55,7 @@
             "name": "Deploy contracts",
             "folder": "QuickStartTemplate-contracts"
           },
-          { "name": "Run dApp", "folder": "QuickStartTemplate-frontend" }
+          { "name": "Run dApp", "folder": "frontend" }
         ],
         "presentation": {
           "hidden": false,

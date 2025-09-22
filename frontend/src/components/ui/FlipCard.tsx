@@ -12,6 +12,9 @@ interface FlipCardProps {
 const FlipCard: React.FC<FlipCardProps> = ({ isVisible, location, probability, description, loading, error }) => {
   const [isFlipped, setIsFlipped] = useState(false)
   const [isClosed, setIsClosed] = useState(false)
+  const [date, setDate] = useState(new Date())
+
+  const formattedDate = date.toLocaleDateString("de-DE")
   // Log when probability changes (debug)
   useEffect(() => {
     // eslint-disable-next-line no-console
@@ -96,7 +99,7 @@ const FlipCard: React.FC<FlipCardProps> = ({ isVisible, location, probability, d
                       </div>
                     )}
                   </div>
-                  <p className="mt-2 text-[10px] opacity-70">{loading ? 'Evaluating…' : 'Tap card for details'}</p>
+                  <p className="mt-2 text-sm opacity-70">{loading ? 'Evaluating…' : 'Tap card for details'}</p>
                   {!loading && typeof probability === 'number' && probability === 0 && (
                     <p className="text-[10px] text-red-100 mt-1">No data</p>
                   )}
@@ -134,7 +137,7 @@ const FlipCard: React.FC<FlipCardProps> = ({ isVisible, location, probability, d
               ) : (
                 // Full view when open
                 <>
-                  <div className="mb-3 text-lg font-semibold opacity-95">Sunset time: 19:14</div>
+                  <div className="mb-3 text-lg font-semibold opacity-95">{formattedDate}</div>
                   {loading && (
                     <div className="flex items-center gap-2 opacity-90">
                       <span className="loading loading-spinner loading-sm" />
@@ -145,7 +148,6 @@ const FlipCard: React.FC<FlipCardProps> = ({ isVisible, location, probability, d
                   {!loading && !error && (
                     <span>{description && description.trim().length > 0 ? description : 'No description available.'}</span>
                   )}
-                  <div className="absolute bottom-3 left-0 right-0 text-center text-md font-semibold opacity-95">18.09.2025</div>
                 </>
               )}
             </div>

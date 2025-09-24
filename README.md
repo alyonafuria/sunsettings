@@ -6,9 +6,30 @@ The project is a full-stack decentralized application built on Algorand that cal
 
 The demo of this web app is deployed [here](https://sunsettings.vercel.app/) to Vercel.
 
+<img src="startscreen.png" width="640" alt="Start Screen" />
+
+<img src="mapscreen.png" width="640" alt="Map Screen" />
+
+<img src="votingscreen.png" width="640" alt="Voting Screen" />
+
+
+
 ## Project Overview
 
-This fork extends the original AlgoKit QuickStartTemplate with a Sunset Beauty Calculator frontend application. The main changes are in the frontend project (`projects/QuickStartTemplate-frontend/`), which transforms the basic dApp template into an interactive sunset prediction and photo-sharing platform.
+This project calculates the probability of a beautiful sunset based on the user's geolocation and weather conditions. Users can upload sunset photos to the interactive map, vote for the best photos, and receive rewards in Algo cryptocurrency for winning submissions.
+
+**AI Sunset Calculation Process**: The system uses OpenAI GPT models with a sophisticated scoring algorithm that analyzes weather data including:
+- cloud cover percentages, 
+- precipitation, 
+- humidity, 
+- atmospheric conditions.
+The AI calculates a 0-100 sunset beauty probability by applying weighted factors: base scoring from:
+- total cloud cover (optimal 30-50%), 
+- rain penalties, 
+- humidity sweet spots, 
+- haze dampening,
+- overcast caps, 
+- then generates concise descriptions of key atmospheric drivers. 
 
 ## Key Features
 
@@ -26,33 +47,63 @@ This fork extends the original AlgoKit QuickStartTemplate with a Sunset Beauty C
 - Docker - Required for local Algorand development
 - Node.js 20.0+ and npm 9.0+
 
-## Additional API Keys Required
+## Environment Variables Required
 
-- OpenAI API Key - For sunset quality analysis
-- Mapbox Token - For interactive map functionality
+The application requires several environment variables to be configured. Create a `.env` file in the `frontend/` directory with the following variables:
+
+### Required API Keys
+```bash
+# OpenAI API - For sunset quality analysis
+VITE_OPENAI_API_KEY=your_openai_api_key
+VITE_OPENAI_MODEL=gpt-4o-mini
+
+# Mapbox - For interactive map functionality
+VITE_MAPBOX_TOKEN=your_mapbox_token
+
+# Piñ ata IPFS - For photo storage (choose one option)
+# Option 1: JWT Token (preferred)
+VITE_PINATA_JWT=your_pinata_jwt_token
+
+# Option 2: API Key + Secret
+VITE_PINATA_API_KEY=your_pinata_api_key
+VITE_PINATA_API_SECRET=your_pinata_api_secret
+```
+
+### Algorand Network Configuration
+```bash
+# Environment
+VITE_ENVIRONMENT=localnet
+
+# Algod Client Configuration
+VITE_ALGOD_TOKEN=your_algod_token
+VITE_ALGOD_SERVER=your_algod_server
+VITE_ALGOD_PORT=your_algod_port
+VITE_ALGOD_NETWORK=localnet
+
+# Indexer Configuration
+VITE_INDEXER_TOKEN=your_indexer_token
+VITE_INDEXER_SERVER=your_indexer_server
+VITE_INDEXER_PORT=your_indexer_port
+
+# KMD Configuration (for local development)
+VITE_KMD_TOKEN=your_kmd_token
+VITE_KMD_SERVER=your_kmd_server
+VITE_KMD_PORT=your_kmd_port
+VITE_KMD_PASSWORD=your_kmd_password
+VITE_KMD_WALLET=your_kmd_wallet
+```
 
 ## Setup
 
 ### Initial Setup
 
 1. Clone this repository to your local machine
-2. Install AlgoKit and ensure Docker is running
-3. Run algokit project bootstrap all in the project directory
-4. Create .env file in projects/QuickStartTemplate-frontend/ with:
-   ```bash
-   VITE_OPENAI_API_KEY=your_openai_api_key
-   VITE_MAPBOX_TOKEN=your_mapbox_token
-   VITE_OPENAI_MODEL=gpt-4o-mini
-   ```
-5. For smart contracts: algokit generate `env-file -a target_network localnet` from the contracts directory
-6. Build the project: `algokit project run build`
+2. Create `.env` file in the `frontend/` directory with the environment variables listed above
+3. Install dependencies with `npm install`
 
 ## Development
 
-- Start frontend development server: `npm run dev` (from frontend directory)
-- The app will automatically generate TypeScript clients from smart contract artifacts
-- Smart contracts are located in `projects/QuickStartTemplate-contracts/`
-- Frontend application is in `projects/QuickStartTemplate-frontend/`
+- Start frontend development server: `npm run dev` (from frontend directory `/frontend`)
 
 ## Frontend Architecture
 
@@ -66,11 +117,26 @@ The frontend is built with React 18 + TypeScript + Vite and includes:
 
 ## Key Components
 
-- `HeroSection.tsx` - Main sunset calculator interface with location detection
-- `MapFullScreen.tsx` - Interactive map with photo markers and predictions
-- `Leaderboard.tsx` - Community photo ranking system
-- `PhotoUpload.tsx` - IPFS-based photo storage with metadata
-- `FlipCard.tsx` - Animated sunset prediction display
+### Sunset Components (`/components/sunset/`)
+- `HeroSection.tsx` - Main sunset calculator interface with location detection and AI-powered analysis
+- `MapFullScreen.tsx` - Interactive Mapbox map with photo markers, predictions, and full-screen view
+- `Leaderboard.tsx` - Community photo ranking system with voting and blockchain transactions
+- `PhotoUpload.tsx` - IPFS-based photo storage with metadata and geolocation
+- `LocationSelector.tsx` - Location search and selection interface
+- `PhotoMarker.tsx` - Map markers for displaying uploaded photos
+- `PhotoPopup.tsx` - Modal for viewing photo details and interactions
+
+### UI Components (`/components/ui/`)
+- `FlipCard.tsx` - Animated sunset prediction display with flip animation
+- `ErrorBoundary.tsx` - Error handling and fallback UI components
+
+### Layout Components (`/components/layout/`)
+- `Header.tsx` - Navigation header with wallet connection and menu
+
+### Wallet Components (`/components/wallet/`)
+- `ConnectWallet.tsx` - Multi-wallet connection interface (Pera, Defly, Exodus, KMD)
+- `Account.tsx` - Wallet account information and management
+- `Transact.tsx` - Transaction handling and blockchain interactions
 
 ## API Integrations
 
@@ -78,18 +144,12 @@ The frontend is built with React 18 + TypeScript + Vite and includes:
 - BrightSky Weather API - Hourly weather data for sunset predictions
 - OpenAI API - AI-powered sunset quality analysis
 - Mapbox Maps API - Interactive map rendering
-
-## Deployment
-
-The project supports automated deployment via GitHub Actions:
-
-- Smart contracts deploy to TestNet via AlgoKit
-- Frontend can be deployed to Netlify, Vercel, or similar platforms
-- Environment variables must be configured in deployment settings
+- Piñata API - IPFS (used for images)
 
 ---
+
+This project is forked from the Algorand's [AlgoKit QuickStart Template](https://github.com/Ganainmtech/Algorand-dApp-Quick-Start-Template-TypeScript) and extended with sunset prediction and photo-sharing functionality.
 
 Built with https://github.com/algorandfoundation/algokit-cli • Algorand Blockchain • React • TypeScript
 
 This project is licensed under the Apache License 2.0. 
-

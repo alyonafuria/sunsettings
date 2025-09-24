@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { Suspense, useEffect, useRef, useState } from 'react'
 import { useMapContext } from '../../contexts/MapContext'
 import { useLocation } from '../../hooks/useLocation'
 import { useWeather } from '../../hooks/useWeather'
 import { PreviousResult } from '../../interfaces/sunset'
 import { createSunsetAIService } from '../../utils/sunsetAIService'
 import LocationSelector from './LocationSelector'
-import MapFullScreen from './MapFullScreen'
+const MapFullScreen = React.lazy(() => import('./MapFullScreen'))
 
 interface HeroSectionProps {}
 
@@ -130,6 +130,12 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
     openMap()
   }
 
+  // Prefetch map chunk on intent (hover/focus)
+  const prefetchMapChunk = () => {
+    // Dynamic import to warm the cache without rendering
+    import('./MapFullScreen')
+  }
+
   // Reset & debounce fetch when location changes (after user selection)
   useEffect(() => {
     if (!hasLocationBeenSet || !location) return
@@ -141,6 +147,13 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
       fetchSunsetData(location, true)
     }, 400)
   }, [location, hasLocationBeenSet]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cleanup debounce on unmount to avoid state updates after unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [])
 
   return (
     <div className="relative w-full min-h-screen overflow-hidden">
@@ -185,6 +198,8 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
             <div className="mb-6">
               <button
                 onClick={handleOpenMap}
+                onMouseEnter={prefetchMapChunk}
+                onFocus={prefetchMapChunk}
                 disabled={sunsetLoading || !sunsetAIService}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500/80 to-pink-500/80 backdrop-blur-md rounded-full text-white border border-white/30 hover:from-purple-600/90 hover:to-pink-600/90 hover:shadow-lg transition-all duration-300 disabled:opacity-50"
               >
@@ -196,17 +211,27 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
           )}
 
           {/* Map Modal */}
-          <MapFullScreen
-            open={isMapOpen}
-            onClose={closeMap}
-            location={location}
-            center={coords ? [coords.lon, coords.lat] : undefined} // <-- added
-            probability={sunsetProbability}
-            description={sunsetDescription}
-            loading={sunsetLoading}
-            error={sunsetError || undefined}
-            onRefresh={() => fetchSunsetData(location, true)}
-          />
+          {isMapOpen && (
+            <Suspense
+              fallback={
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+                  <div className="text-white text-sm">Loading map…</div>
+                </div>
+              }
+            >
+              <MapFullScreen
+                open={true}
+                onClose={closeMap}
+                location={location}
+                center={coords ? [coords.lon, coords.lat] : undefined}
+                probability={sunsetProbability}
+                description={sunsetDescription}
+                loading={sunsetLoading}
+                error={sunsetError || undefined}
+                onRefresh={() => fetchSunsetData(location, true)}
+              />
+            </Suspense>
+          )}
           {/* Optional tiny debug for weather (comment out if not needed) */}
           {/* <div className="mt-4 text-[10px] text-white/60 whitespace-pre-wrap">{weatherSummary}</div> */}
         </div>

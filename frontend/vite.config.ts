@@ -12,4 +12,24 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    target: 'es2020',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          mapbox: ['mapbox-gl'],
+          wallets: [
+            '@txnlab/use-wallet',
+            '@txnlab/use-wallet-react',
+            '@perawallet/connect',
+            '@blockshake/defly-connect',
+          ],
+        },
+      },
+    },
+  },
+  optimizeDeps: {
+    include: ['algosdk'],
+  },
 })

@@ -261,7 +261,7 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
   if (!open) return null
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-sm" role="dialog" aria-modal="true">
-      {/* Header bar */}
+      {/* Header bar
       <div className="flex justify-between items-center p-4 bg-gradient-to-r from-orange-500/90 via-red-500/90 to-purple-600/90 backdrop-blur-md shadow-lg">
         <h2 className="text-xl font-bold text-white">Sunset Map</h2>
         <div className="flex items-center gap-2">
@@ -290,7 +290,7 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
             <span className="font-medium">Close</span>
           </button>
         </div>
-      </div>
+      </div> */}
 
       {/* Floating close button (alternative/additional) */}
       <button

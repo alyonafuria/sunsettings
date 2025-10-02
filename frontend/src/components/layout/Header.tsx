@@ -44,7 +44,7 @@ const Header: React.FC<HeaderProps> = () => {
               </h1>
             </div>
 
-            {/* Desktop Navigation */}
+            {/* Desktop Navigation
             <nav className="hidden md:flex items-center space-x-4">
               <button
                 onClick={() => handleNavigation('/leaderboard')}
@@ -61,9 +61,9 @@ const Header: React.FC<HeaderProps> = () => {
                   ? `${activeAddress.substring(0, 6)}...${activeAddress.substring(activeAddress.length - 4)}`
                   : 'Connect Wallet'}
               </button>
-            </nav>
+            </nav> */}
 
-            {/* Mobile Menu Button */}
+            {/* Mobile Menu Button
             <button
               onClick={toggleMobileMenu}
               className="md:hidden flex flex-col justify-center items-center w-8 h-8 space-y-1.5"
@@ -76,17 +76,17 @@ const Header: React.FC<HeaderProps> = () => {
               <span
                 className={`block w-6 h-0.5 bg-white transition-all duration-300 ${isMobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}
               />
-            </button>
+            </button>*/}
           </div>
 
-          {/* Mobile Menu */}
+          {/* Mobile Menu
           <div
             className={`md:hidden transition-all duration-300 overflow-hidden ${
               isMobileMenuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
             }`}
           >
             <nav className="flex flex-col space-y-2 py-4">
-              <button
+              <button 
                 onClick={() => handleNavigation('/leaderboard')}
                 className="px-6 py-3 text-white font-medium hover:bg-white/20 rounded-full transition-all duration-300 backdrop-blur-sm border border-white/30 text-left"
               >
@@ -102,17 +102,16 @@ const Header: React.FC<HeaderProps> = () => {
                   : 'Connect Wallet'}
               </button>
             </nav>
-          </div>
-        </div>
+          </div>*/}
+        </div> 
 
         {/* Gradient border at bottom */}
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-yellow-400/50 via-orange-400/50 to-purple-500/50" />
       </header>
 
-      {/* Connect Wallet Modal */}
-      <ConnectWallet openModal={openWalletModal} closeModal={() => setOpenWalletModal(false)} />
+      {/* Connect Wallet Modal
+      <ConnectWallet openModal={openWalletModal} closeModal={() => setOpenWalletModal(false)} /> */}
     </>
   )
 }
-
 export default Header

@@ -5,6 +5,8 @@ import { useWeather } from '../../hooks/useWeather'
 import { PreviousResult } from '../../interfaces/sunset'
 import { createSunsetAIService } from '../../utils/sunsetAIService'
 import LocationSelector from './LocationSelector'
+import OnboardingModal from '../../components/onboarding/OnboardingModal'
+import PhotoUpload from '../sunset/PhotoUpload'
 const MapFullScreen = React.lazy(() => import('./MapFullScreen'))
 
 interface HeroSectionProps {}
@@ -38,6 +40,10 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
   const [sunsetDescription, setSunsetDescription] = useState<string>('')
   const [sunsetLoading, setSunsetLoading] = useState(false)
   const [sunsetError, setSunsetError] = useState<string | null>(null)
+
+  const [isUploadOpen, setIsUploadOpen] = useState(false)
+  const openUpload = () => setIsUploadOpen(true)
+  const closeUpload = () => setIsUploadOpen(false)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const previousResultRef = useRef<PreviousResult | null>(null)
@@ -157,6 +163,8 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
 
   return (
     <div className="relative w-full min-h-screen overflow-hidden">
+      {/* Onboarding Modal */}
+      <OnboardingModal openByDefault onOpenUpload={openUpload} />
       {/* Gradient / background layers */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 rounded-full" />
@@ -232,6 +240,12 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
               />
             </Suspense>
           )}
+           <PhotoUpload
+            open={isUploadOpen}
+            onClose={closeUpload}
+            onUploaded={() => { closeUpload()
+        }}
+      />
           {/* Optional tiny debug for weather (comment out if not needed) */}
           {/* <div className="mt-4 text-[10px] text-white/60 whitespace-pre-wrap">{weatherSummary}</div> */}
         </div>

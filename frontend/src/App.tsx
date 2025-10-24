@@ -6,6 +6,10 @@ import Header from './components/layout/Header'
 import Leaderboard from './components/sunset/Leaderboard'
 import { MapProvider } from './contexts/MapContext'
 import { getAlgodConfigFromViteEnvironment, getKmdConfigFromViteEnvironment } from './utils/network/getAlgoClientConfigs'
+import AccountChoice from './pages/account/AccountChoice'
+import RegisterPage from './pages/account/RegisterPage'
+import LoginPage from './pages/account/LoginPage'
+import ProfilePage from './pages/account/ProfilePage'
 
 let supportedWallets: SupportedWallet[]
 if (import.meta.env.VITE_ALGOD_NETWORK === 'localnet') {
@@ -63,6 +67,10 @@ export default function App() {
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/leaderboard" element={<Leaderboard />} />
+                  <Route path="/account" element={<AccountChoice />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
                 </Routes>
               </div>
             </div>

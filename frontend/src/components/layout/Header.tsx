@@ -32,6 +32,11 @@ const Header: React.FC<HeaderProps> = () => {
     handleNavigation('/')
   }
 
+  const handleRepeatTour = () => {
+  try { localStorage.removeItem('sunsettings.onboardingDone') } catch {}
+  window.dispatchEvent(new Event('open-onboarding'))
+  }
+
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-orange-400/90 via-red-500/90 to-purple-600/90 backdrop-blur-md">
@@ -43,6 +48,18 @@ const Header: React.FC<HeaderProps> = () => {
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-200 to-pink-200">Sunsettings</span>
               </h1>
             </div>
+            <button
+            onClick={handleRepeatTour}
+            className="px-4 py-2 text-white font-medium bg-white/10 hover:bg-white/20 rounded-full transition"
+            >
+            What is this?
+            </button>
+            <button
+            onClick={() => handleNavigation('/account')}
+            className="px-3 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition"
+            >
+            Personal Account
+            </button>
 
             {/* Desktop Navigation
             <nav className="hidden md:flex items-center space-x-4">

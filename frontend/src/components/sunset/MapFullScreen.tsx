@@ -289,8 +289,8 @@ const MapFullScreen: React.FC<MapFullScreenProps> = ({
             </svg>
             <span className="font-medium">Close</span>
           </button>
-        </div>
-      </div> */}
+        </div> 
+      </div> 
 
       {/* Floating close button (alternative/additional) */}
       <button

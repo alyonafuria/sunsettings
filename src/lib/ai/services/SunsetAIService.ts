@@ -1,5 +1,5 @@
 import type { SunsetAnalysisParams, SunsetAnalysisResult, SunsetServiceConfig } from "../interfaces/sunset"
-import { SUNSET_ANALYSIS_PROMPT, SYSTEM_MESSAGE } from "../sunsetPrompts"
+import { SUNSET_SCORING_PROMPT, SUNSET_DESCRIPTION_PROMPT, SYSTEM_MESSAGE } from "../sunsetPrompts"
 
 /**
  * Service for AI-powered sunset quality analysis
@@ -10,6 +10,8 @@ export class SunsetAIService {
   constructor(config: SunsetServiceConfig) {
     this.config = {
       temperature: 0.7,
+      temperatureScore: 0.1,
+      temperatureDescription: 0.9,
       maxTokens: 200,
       ...config,
     }
@@ -23,13 +25,14 @@ export class SunsetAIService {
 
     const truncatedWxSummary = weatherSummary.length > 220 ? weatherSummary.slice(0, 220) : weatherSummary
 
-    const prompt = SUNSET_ANALYSIS_PROMPT
-      .replace("{weatherSummary}", truncatedWxSummary || "avg_cloud:NA; avg_humidity:NA; avg_temp:NA; precip_prob_max:NA; precip_total:NA; hours_analyzed:NA")
+    // Pass 1: Deterministic scoring (probability only)
+    const scoringPrompt = SUNSET_SCORING_PROMPT
+      .replace("{weatherSummary}", truncatedWxSummary || "avg_cloud:NA; avg_humidity:NA; precip_prob_max:NA; precip_total:NA; hours_analyzed:NA")
       .replace("{location}", location)
       .replace("{timeUTC}", new Date().toISOString())
       .replace("{seed}", String(seed))
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const scoreResp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${this.config.apiKey}`,
@@ -37,56 +40,90 @@ export class SunsetAIService {
       },
       body: JSON.stringify({
         model: this.config.model,
-        temperature: this.config.temperature,
+        temperature: this.config.temperatureScore ?? this.config.temperature ?? 0.1,
         max_tokens: this.config.maxTokens,
         messages: [
           { role: "system", content: SYSTEM_MESSAGE },
-          { role: "user", content: prompt },
+          { role: "user", content: scoringPrompt },
         ],
       }),
     })
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
+    if (!scoreResp.ok) {
+      throw new Error(`HTTP ${scoreResp.status}`)
     }
 
-    const data = await response.json()
-    const raw = data?.choices?.[0]?.message?.content?.trim() || ""
+    const scoreData = await scoreResp.json()
+    const scoreRaw = scoreData?.choices?.[0]?.message?.content?.trim() || ""
+    const probability = this.parseProbability(scoreRaw)
 
-    // Debug raw response
-    // console.debug('[SunsetAI raw]', raw)
+    // Pass 2: Creative description conditioned on the numeric probability
+    const descriptionPrompt = SUNSET_DESCRIPTION_PROMPT
+      .replace("{weatherSummary}", truncatedWxSummary || "avg_cloud:NA; avg_humidity:NA; precip_prob_max:NA; precip_total:NA; hours_analyzed:NA")
+      .replace("{location}", location)
+      .replace("{timeUTC}", new Date().toISOString())
+      .replace("{seed}", String(seed))
+      .replace("{probability}", String(probability ?? "NA"))
 
-    return this.parseResponse(raw)
+    const descResp = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.config.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: this.config.model,
+        temperature: this.config.temperatureDescription ?? this.config.temperature ?? 0.9,
+        max_tokens: this.config.maxTokens,
+        messages: [
+          { role: "system", content: SYSTEM_MESSAGE },
+          { role: "user", content: descriptionPrompt },
+        ],
+      }),
+    })
+
+    if (!descResp.ok) {
+      throw new Error(`HTTP ${descResp.status}`)
+    }
+
+    const descData = await descResp.json()
+    const descRaw = descData?.choices?.[0]?.message?.content?.trim() || ""
+    const description = this.parseDescription(descRaw)
+
+    return { probability: this.normalizeProbability(probability), description }
   }
 
   /**
    * Parses the AI response and extracts JSON data
    */
-  private parseResponse(raw: string): SunsetAnalysisResult {
+  private parseProbability(raw: string): number | null {
     let parsed: unknown = null
-
     try {
       parsed = JSON.parse(raw)
     } catch {
       const match = raw.match(/\{[\s\S]*\}/)
       if (match) {
-        try {
-          parsed = JSON.parse(match[0])
-        } catch {
-          // ignore
-        }
+        try { parsed = JSON.parse(match[0]) } catch {}
       }
     }
+    if (!parsed || typeof parsed !== "object") throw new Error("Bad JSON response (score)")
+    const obj = parsed as { probability?: unknown }
+    return typeof obj.probability === "number" ? obj.probability : null
+  }
 
-    if (!parsed || typeof parsed !== "object") {
-      throw new Error("Bad JSON response from AI")
+  private parseDescription(raw: string): string {
+    let parsed: unknown = null
+    try {
+      parsed = JSON.parse(raw)
+    } catch {
+      const match = raw.match(/\{[\s\S]*\}/)
+      if (match) {
+        try { parsed = JSON.parse(match[0]) } catch {}
+      }
     }
-
-    const obj = parsed as { probability?: unknown; description?: unknown }
-    return {
-      probability: typeof obj.probability === "number" ? obj.probability : null,
-      description: typeof obj.description === "string" ? obj.description : "No description",
-    }
+    if (!parsed || typeof parsed !== "object") throw new Error("Bad JSON response (description)")
+    const obj = parsed as { description?: unknown }
+    return typeof obj.description === "string" ? obj.description : "No description"
   }
 
   normalizeProbability(probability: unknown): number | null {
@@ -129,7 +166,9 @@ export const createSunsetAIService = (): SunsetAIService | null => {
   const apiKey = process.env.OPENAI_API_KEY || process.env.NEXT_PRIVATE_OPENAI_API_KEY || process.env.NEXT_OPENAI_API_KEY
   const model = process.env.OPENAI_MODEL || "gpt-4o-mini"
   const temperature = process.env.OPENAI_TEMPERATURE ? Number(process.env.OPENAI_TEMPERATURE) : undefined
+  const temperatureScore = process.env.OPENAI_TEMPERATURE_SCORE ? Number(process.env.OPENAI_TEMPERATURE_SCORE) : undefined
+  const temperatureDescription = process.env.OPENAI_TEMPERATURE_DESCRIPTION ? Number(process.env.OPENAI_TEMPERATURE_DESCRIPTION) : undefined
   const maxTokens = process.env.OPENAI_MAX_TOKENS ? Number(process.env.OPENAI_MAX_TOKENS) : undefined
   if (!apiKey) return null
-  return new SunsetAIService({ apiKey, model, temperature, maxTokens })
+  return new SunsetAIService({ apiKey, model, temperature, temperatureScore, temperatureDescription, maxTokens })
 }

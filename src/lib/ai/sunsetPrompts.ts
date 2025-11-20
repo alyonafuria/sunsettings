@@ -5,7 +5,8 @@ You are a deterministic weather analyst. Follow the user's rules exactly.
 - Be concise and consistent. Avoid hedging. Do not include units in the JSON.
 `.trim()
 
-export const SUNSET_ANALYSIS_PROMPT = `
+// Deterministic scoring-only prompt (low temperature)
+export const SUNSET_SCORING_PROMPT = `
 You are an analyst producing a sunset quality estimate ONLY from the provided weather features.
 
 
@@ -106,18 +107,31 @@ Scoring (apply exactly in order):
    Round to nearest INT, then clamp to 0..100.
 
 
-Description:
-- ≤200 chars, concise, vivid and fun tone (evocative but professional), no inner quotes.
-- Mention 3–4 key drivers (e.g., solid low overcast blocks light; showers nearby; high humidity haze; broken mid clouds with dry air).
-- Prefer dynamic verbs and colorful but precise wording; avoid hedging.
-
-
 Return ONLY compact JSON (no markdown, no backticks, no commentary):
-{"probability": <int 0-100>, "description":"<text>"}
+{"probability": <int 0-100>}
 
 
 WeatherFeatures: {weatherSummary}
 Location: {location}
 TimeUTC: {timeUTC}
+RandomSeed: {seed}
+`.trim()
+
+// Creative description-only prompt (higher temperature)
+export const SUNSET_DESCRIPTION_PROMPT = `
+You are a sunset narrator. Write a short, vivid description consistent with the provided WeatherFeatures and numeric probability.
+
+Rules:
+- ≤200 chars, concise, vivid and fun tone (evocative but professional), no inner quotes.
+- Mention 2–4 key drivers (e.g., low overcast blocks light; showers nearby; high humidity haze; broken mid clouds with dry air).
+- Do NOT restate numbers. Do NOT contradict WeatherFeatures. No markdown.
+
+Return ONLY compact JSON (no markdown):
+{"description":"<text>"}
+
+WeatherFeatures: {weatherSummary}
+Location: {location}
+TimeUTC: {timeUTC}
+Probability: {probability}
 RandomSeed: {seed}
 `.trim()

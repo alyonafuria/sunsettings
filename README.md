@@ -1,38 +1,36 @@
-# sunsettings
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Getting Started
 
-The project is a full-stack decentralized application built on Algorand that estimates the probability of a beautiful sunset using AI-guided weather analysis, with an interactive Mapbox map and optional photo sharing pinned to IPFS via Pinata.
+First, run the development server:
 
-The demo of this web app is deployed [here](https://sunsettings-algo.vercel.app) on Vercel.
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Project Overview
+## Learn More
 
-This project calculates the probability of a beautiful sunset based on the user's geolocation and weather conditions. Users can upload sunset photos to the interactive map and explore recent community uploads.
+To learn more about Next.js, take a look at the following resources:
 
-Important behavior: predictions are shown only before local sunset. After local sunset time at the selected location, the app intentionally does not display a prediction.
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-**AI Sunset Calculation Process**: The system uses OpenAI GPT models with a sophisticated scoring algorithm that analyzes weather data including:
-- cloud cover percentages, 
-- precipitation, 
-- humidity, 
-- atmospheric conditions.
-The AI calculates a 0-100 sunset beauty probability by applying weighted factors: base scoring from:
-- total cloud cover (optimal 30-50%), 
-- rain penalties, 
-- humidity sweet spots, 
-- haze dampening,
-- overcast caps, 
-- then generates concise descriptions of key atmospheric drivers. 
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Key Features
+## Deploy on Vercel
 
-- **AI-powered sunset analysis** using OpenAI models over real-time weather data
-- **Interactive Mapbox map** with location-aware sunset previews and photo markers
-- **Photo upload to IPFS (Pinata)** with basic metadata for map display
-- **Weather integration** via BrightSky (and compatible providers) for hourly conditions
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-
-This project is licensed under the Apache License 2.0. 
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

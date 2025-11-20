@@ -4,6 +4,8 @@ import localFont from "next/font/local";
 import Link from "next/link";
 import { Menubar } from "@/components/ui/menubar";
 import "./globals.css";
+import { Providers } from "./providers";
+import FarcasterReady from "@/components/FarcasterReady";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -61,21 +63,55 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${suseMono.variable} antialiased h-screen overflow-hidden`}
       >
-        <Menubar className="fixed left-0 right-0 top-0 h-16 px-2 z-20">
-          <div className="flex w-full items-center">
-            <div className="flex-1" />
-            <Link
-              href="/"
-              className={`flex-1 text-center ${sunsettingsHeadline.className} text-white text-5xl md:text-4xl leading-none tracking-tight`}
-            >
-              sunsettings
-            </Link>
-            <nav className="flex-1" />
-          </div>
-        </Menubar>
-        <main className="relative z-10  overflow-hidden">
-          {children}
-        </main>
+        <Providers>
+          <FarcasterReady />
+          <Menubar className="fixed left-0 right-0 top-0 h-16 px-2 z-20">
+            <div className="grid w-full grid-cols-3 items-center">
+              <div className="px-3" />
+              <Link
+                href="/"
+                className={`${sunsettingsHeadline.className} col-start-2 justify-self-center text-center text-white text-5xl md:text-4xl leading-none tracking-tight`}
+              >
+                sunsettings
+              </Link>
+              <nav className="px-3" />
+            </div>
+          </Menubar>
+          <main className="absolute z-10 h-[calc(100vh-4rem)] w-screen overflow-hidden pt-16 pb-16">
+            {children}
+          </main>
+          <Menubar className="fixed bottom-0 left-0 right-0 h-16 px-4 z-20 border-t-2 border-border">
+            <nav className="flex h-full w-full">
+              <div className="flex-1 h-full">
+                <Link
+                  href="/"
+                  className="flex w-full h-full items-center justify-center text-base font-medium"
+                  aria-label="Go to Home"
+                >
+                  Home
+                </Link>
+              </div>
+              <div className="flex-1 h-full border-l-2 border-border">
+                <Link
+                  href="/feed"
+                  className="flex w-full h-full items-center justify-center text-base font-medium"
+                  aria-label="Go to Feed"
+                >
+                  Feed
+                </Link>
+              </div>
+              <div className="flex-1 h-full border-l-2 border-border">
+                <Link
+                  href="/account"
+                  className="flex w-full h-full items-center justify-center text-base font-medium"
+                  aria-label="Go to Account"
+                >
+                  Account
+                </Link>
+              </div>
+            </nav>
+          </Menubar>
+        </Providers>
       </body>
     </html>
   );

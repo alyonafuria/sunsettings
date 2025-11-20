@@ -6,6 +6,8 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import Image from "next/image";
 import { HelpCircle } from "lucide-react";
+import algosdk from "algosdk";
+import { useWallet } from "@txnlab/use-wallet-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,7 +44,8 @@ export default function UploadPhotoPanel({
   coords?: { lat?: number; lon?: number };
   onLocationMismatchChange?: (mismatch: boolean) => void;
 }) {
-  const isConnected = false;
+  const { activeAddress, signTransactions } = useWallet();
+  const isConnected = !!activeAddress;
   const [file, setFile] = React.useState<File | null>(null);
   const [uploading, setUploading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -78,6 +81,25 @@ export default function UploadPhotoPanel({
   );
   const [prehashSha256, setPrehashSha256] = React.useState<string | null>(null);
   const [locationMismatch, setLocationMismatch] = React.useState(false);
+  const [minting, setMinting] = React.useState(false);
+
+  function hexToBytes(hex: string): Uint8Array {
+    const clean = hex.trim().toLowerCase();
+    if (clean.length % 2 !== 0) throw new Error("Invalid hex length");
+    const out = new Uint8Array(clean.length / 2);
+    for (let i = 0; i < clean.length; i += 2) {
+      out[i / 2] = parseInt(clean.slice(i, i + 2), 16);
+    }
+    return out;
+  }
+
+  async function sha256HexUtf8(s: string): Promise<string> {
+    const enc = new TextEncoder();
+    const digest = await crypto.subtle.digest("SHA-256", enc.encode(s));
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  }
 
   const resetUpload = () => {
     setFile(null);
@@ -581,6 +603,7 @@ export default function UploadPhotoPanel({
                     disabled={
                       !file ||
                       uploading ||
+                      minting ||
                       (!photoH3Index && !gpsFix) ||
                       locationMismatch ||
                       (typeof scorePercent === "number"
@@ -588,7 +611,7 @@ export default function UploadPhotoPanel({
                         : false)
                     }
                   >
-                    {uploading ? "Posting…" : "Post"}
+                    {uploading || minting ? "Posting…" : "Post"}
                   </Button>
                 </div>
               </div>
@@ -815,6 +838,54 @@ export default function UploadPhotoPanel({
         }
         if (!metaJson?.cid) throw new Error("No CID from JSON upload");
         setMetaCid(metaJson.cid);
+        // 3) ARC-3 mint (Algorand ASA)
+        if (!activeAddress) {
+          throw new Error("Connect your Algorand wallet to mint the NFT");
+        }
+        setMinting(true);
+        try {
+          const ALGOD_BASE_SERVER = process.env.NEXT_PUBLIC_ALGOD_SERVER || "https://testnet-api.algonode.cloud";
+          const ALGOD_PORT = process.env.NEXT_PUBLIC_ALGOD_PORT || "443";
+          const ALGOD_TOKEN = process.env.NEXT_PUBLIC_ALGOD_TOKEN || "";
+          const algod = new algosdk.Algodv2(ALGOD_TOKEN, ALGOD_BASE_SERVER, ALGOD_PORT);
+
+          const suggested = await algod.getTransactionParams().do();
+          // ARC-3 fields
+          const assetURL = `ipfs://${metaJson.cid}#arc3`;
+          const metadataJsonStr = JSON.stringify(metadata);
+          const metaHex = await sha256HexUtf8(metadataJsonStr);
+          const assetMetadataHash = hexToBytes(metaHex); // 32 bytes
+
+          const unitName = "SUNSET"; // <= 8 chars
+          const assetName = (name || "sunsettings").slice(0, 32);
+
+          const txn = algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
+            from: activeAddress,
+            total: 1,
+            decimals: 0,
+            defaultFrozen: false,
+            unitName,
+            assetName,
+            assetURL,
+            assetMetadataHash,
+            manager: activeAddress,
+            reserve: activeAddress,
+            freeze: activeAddress,
+            clawback: activeAddress,
+            suggestedParams: suggested,
+          } as any);
+
+          const signedMaybe = await signTransactions([txn.toByte()]);
+          const signed = (signedMaybe.filter(Boolean) as Uint8Array[]);
+          const txId = txn.txID();
+          await algod.sendRawTransaction(signed).do();
+          await algosdk.waitForConfirmation(algod, txId, 4);
+          try {
+            window.dispatchEvent(new CustomEvent("sunsettings:nftMinted"));
+          } catch {}
+        } finally {
+          setMinting(false);
+        }
         try {
           window.dispatchEvent(
             new CustomEvent("sunsettings:photoUploaded", {

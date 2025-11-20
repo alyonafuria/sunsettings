@@ -44,7 +44,7 @@ export async function GET(req: Request) {
 
     const [summary, sunset] = await Promise.all([
       getWeatherSummary(lat, lon, date),
-      getSunsetAuto(lat, lon, ymd).catch(() => ({ utc: null as string | null, local: null as string | null })),
+      getSunsetLocalAware(lat, lon, ymd).catch(() => ({ utc: null as string | null, local: null as string | null })),
     ])
 
     memCache.set(cacheKey, { value: { summary, sunsetUtc: sunset.utc, sunsetLocal: sunset.local }, expires: now + CACHE_TTL_MS })
@@ -55,42 +55,73 @@ export async function GET(req: Request) {
   }
 }
 
-// Returns both UTC ISO and a human local time string for the location
+// Returns both UTC ISO and a human local time string for the location, for the location's CURRENT LOCAL DAY.
 type OpenMeteoSunset = {
   daily?: { sunset?: string[] }
   utc_offset_seconds?: number
 }
 
-async function getSunsetAuto(lat: number, lon: number, ymd: string): Promise<{ utc: string | null; local: string | null }> {
-  // Ask Open-Meteo to compute daily sunset in the LOCATION's local timezone
+function parseLocalToUtcIso(localTime: string, offsetSec: number): { utcIso: string; localHHmm: string; localDate: string } | null {
+  // localTime format: YYYY-MM-DDTHH:MM
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(localTime)
+  if (!m) return null
+  const y = parseInt(m[1], 10)
+  const mo = parseInt(m[2], 10)
+  const d = parseInt(m[3], 10)
+  const hh = parseInt(m[4], 10)
+  const mm = parseInt(m[5], 10)
+  const localMs = Date.UTC(y, mo - 1, d, hh, mm, 0)
+  const utcMs = localMs - (offsetSec * 1000)
+  return {
+    utcIso: new Date(utcMs).toISOString(),
+    localHHmm: `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`,
+    localDate: `${m[1]}-${m[2]}-${m[3]}`,
+  }
+}
+
+async function getSunsetLocalAware(lat: number, lon: number, ymdUtc: string): Promise<{ utc: string | null; local: string | null }> {
+  // Fetch two days to straddle local midnight and select by location's current local date
+  const start = ymdUtc
+  const endDate = new Date(`${ymdUtc}T00:00:00.000Z`)
+  endDate.setUTCDate(endDate.getUTCDate() + 1)
+  const end = endDate.toISOString().slice(0, 10)
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-    `&daily=sunset&timezone=auto&start_date=${ymd}&end_date=${ymd}`
+    `&daily=sunset&timezone=auto&start_date=${start}&end_date=${end}`
   const res = await fetch(url)
   if (!res.ok) return { utc: null, local: null }
   const json = (await res.json().catch(() => null)) as unknown as OpenMeteoSunset | null
   if (!json) return { utc: null, local: null }
-  const times = json.daily?.sunset
-  const timeStr = Array.isArray(times) && typeof times[0] === 'string' ? times[0] : null
+  const times = Array.isArray(json.daily?.sunset) ? (json.daily!.sunset as string[]) : []
   const offsetSec = typeof json.utc_offset_seconds === 'number' ? json.utc_offset_seconds : 0
-  if (!timeStr) return { utc: null, local: null }
-  // Open-Meteo returns local time like 'YYYY-MM-DDTHH:MM'
-  // Convert to UTC by subtracting offset
-  try {
-    // timeStr format: YYYY-MM-DDTHH:MM (local time at location)
-    const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(timeStr)
-    if (!m) return { utc: null, local: null }
-    const y = parseInt(m[1], 10)
-    const mo = parseInt(m[2], 10)
-    const d = parseInt(m[3], 10)
-    const hh = parseInt(m[4], 10)
-    const mm = parseInt(m[5], 10)
-    // Compute UTC millis: local_time = utc + offset  =>  utc = local - offset
-    const localMs = Date.UTC(y, mo - 1, d, hh, mm, 0)
-    const utcMs = localMs - (offsetSec * 1000)
-    const utcIso = new Date(utcMs).toISOString()
-    const hhmm = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`
-    return { utc: utcIso, local: hhmm }
-  } catch {
-    return { utc: null, local: null }
-  }
+  if (!times.length) return { utc: null, local: null }
+
+  const parsed = times
+    .map((t) => parseLocalToUtcIso(t, offsetSec))
+    .filter((v): v is NonNullable<ReturnType<typeof parseLocalToUtcIso>> => !!v)
+
+  if (!parsed.length) return { utc: null, local: null }
+
+  // Determine current local date at the location
+  const nowUtcMs = Date.now()
+  const nowLocalMs = nowUtcMs + offsetSec * 1000
+  const nowLocalDate = new Date(nowLocalMs).toISOString().slice(0, 10)
+
+  // Prefer sunset whose local date matches location's current local date
+  const todayLocal = parsed.find((p) => p.localDate === nowLocalDate)
+  if (todayLocal) return { utc: todayLocal.utcIso, local: todayLocal.localHHmm }
+
+  // Fallback: pick the next upcoming sunset after now
+  const nextUpcoming = parsed
+    .map((p) => ({ ...p, utcMs: Date.parse(p.utcIso) }))
+    .filter((p) => Number.isFinite(p.utcMs))
+    .sort((a, b) => a.utcMs - b.utcMs)
+    .find((p) => nowUtcMs <= p.utcMs)
+  if (nextUpcoming) return { utc: nextUpcoming.utcIso, local: nextUpcoming.localHHmm }
+
+  // Else return the latest (already passed) of the range
+  const last = parsed
+    .map((p) => ({ ...p, utcMs: Date.parse(p.utcIso) }))
+    .filter((p) => Number.isFinite(p.utcMs))
+    .sort((a, b) => b.utcMs - a.utcMs)[0]
+  return last ? { utc: last.utcIso, local: last.localHHmm } : { utc: null, local: null }
 }

@@ -20,6 +20,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toH3, centerOf, DEFAULT_H3_RES } from "@/lib/h3";
+import algosdk from "algosdk";
+import { useWallet } from "@txnlab/use-wallet-react";
+import { useUserWallet } from "@/lib/useUserWallet";
 
 export default function UploadPhotoPanel({
   locationLabel,
@@ -44,8 +47,10 @@ export default function UploadPhotoPanel({
   coords?: { lat?: number; lon?: number };
   onLocationMismatchChange?: (mismatch: boolean) => void;
 }) {
-  const { activeAddress, signTransactions } = useWallet();
-  const isConnected = !!activeAddress;
+  const { address, isConnected } = useUserWallet();
+  const { signTransactions, activeAddress } = useWallet() as unknown as { signTransactions: (txns: (Uint8Array|null)[]) => Promise<(Uint8Array|null)[]>; activeAddress?: string|null };
+  const connectedAddress = (address ?? activeAddress) || null;
+  const connected = !!connectedAddress;
   const [file, setFile] = React.useState<File | null>(null);
   const [uploading, setUploading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -373,7 +378,7 @@ export default function UploadPhotoPanel({
   // File chosen or uploaded: show Card wrapper with image (preview or uploaded), caption, and badge
   if (file || photoCid) {
     const imgUrl = photoCid
-      ? `https://tan-mad-gorilla-689.mypinata.cloud/ipfs/${photoCid}`
+      ? `https://gateway.pinata.cloud/ipfs/${photoCid}`
       : null;
     const imageSrc = photoCid ? imgUrl! : previewUrl || "";
     const unoptimized = true;
@@ -550,20 +555,27 @@ export default function UploadPhotoPanel({
               ))}
           </div>
           <figcaption className="border-t-2 text-main-foreground border-border p-4">
-            {uploading ? (
+            {minting ? (
+              <div className="text-center py-2">
+                <div className="text-sm">Minting on Algorand…</div>
+              </div>
+            ) : uploading ? (
               <div className="text-center py-2">
                 <div className="text-sm">Uploading…</div>
               </div>
             ) : metaCid ? (
               <div className="space-y-2">
-                <div className="text-sm">Photo uploaded successfully</div>
-                {/* Minting via EVM disabled in this build */}
+                <div className="text-sm">
+                  Photo uploaded successfully
+                </div>
               </div>
             ) : (
               <div className="text-center space-y-2">
-                <div className="text-xs opacity-80">
-                  You need to sign up / log in to submit a photo.
-                </div>
+                {!connected && (
+                  <div className="text-xs opacity-80">
+                    You need to sign up / log in to submit a photo.
+                  </div>
+                )}
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-sm">Disagree with the score?</div>
                   <Switch
@@ -602,6 +614,7 @@ export default function UploadPhotoPanel({
                     onClick={onUpload}
                     disabled={
                       !file ||
+                      !connected ||
                       uploading ||
                       minting ||
                       (!photoH3Index && !gpsFix) ||
@@ -838,29 +851,31 @@ export default function UploadPhotoPanel({
         }
         if (!metaJson?.cid) throw new Error("No CID from JSON upload");
         setMetaCid(metaJson.cid);
+        // switch UI from Uploading… to Minting…
+        setUploading(false);
+        onUploadingChange?.(false);
+
         // 3) ARC-3 mint (Algorand ASA)
-        if (!activeAddress) {
-          throw new Error("Connect your Algorand wallet to mint the NFT");
-        }
-        setMinting(true);
-        try {
+        const sender = connectedAddress;
+        if (sender) {
+          setMinting(true);
+          try {
           const ALGOD_BASE_SERVER = process.env.NEXT_PUBLIC_ALGOD_SERVER || "https://testnet-api.algonode.cloud";
           const ALGOD_PORT = process.env.NEXT_PUBLIC_ALGOD_PORT || "443";
           const ALGOD_TOKEN = process.env.NEXT_PUBLIC_ALGOD_TOKEN || "";
           const algod = new algosdk.Algodv2(ALGOD_TOKEN, ALGOD_BASE_SERVER, ALGOD_PORT);
 
           const suggested = await algod.getTransactionParams().do();
-          // ARC-3 fields
           const assetURL = `ipfs://${metaJson.cid}#arc3`;
           const metadataJsonStr = JSON.stringify(metadata);
           const metaHex = await sha256HexUtf8(metadataJsonStr);
-          const assetMetadataHash = hexToBytes(metaHex); // 32 bytes
+          const assetMetadataHash = hexToBytes(metaHex);
 
           const unitName = "SUNSET"; // <= 8 chars
           const assetName = (name || "sunsettings").slice(0, 32);
 
           const txn = algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
-            from: activeAddress,
+            from: sender,
             total: 1,
             decimals: 0,
             defaultFrozen: false,
@@ -868,10 +883,10 @@ export default function UploadPhotoPanel({
             assetName,
             assetURL,
             assetMetadataHash,
-            manager: activeAddress,
-            reserve: activeAddress,
-            freeze: activeAddress,
-            clawback: activeAddress,
+            manager: sender,
+            reserve: sender,
+            freeze: sender,
+            clawback: sender,
             suggestedParams: suggested,
           } as any);
 
@@ -883,8 +898,11 @@ export default function UploadPhotoPanel({
           try {
             window.dispatchEvent(new CustomEvent("sunsettings:nftMinted"));
           } catch {}
+        } catch (e) {
+         
         } finally {
           setMinting(false);
+        }
         }
         try {
           window.dispatchEvent(

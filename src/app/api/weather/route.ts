@@ -55,7 +55,7 @@ export async function GET(req: Request) {
   }
 }
 
-// Returns both UTC ISO and a human local time string for the location, for the location's CURRENT LOCAL DAY.
+// Returns both UTC ISO and a human local time string for the location, chosen for the location's CURRENT LOCAL DAY.
 type OpenMeteoSunset = {
   daily?: { sunset?: string[] }
   utc_offset_seconds?: number

@@ -6,6 +6,8 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import Image from "next/image";
 import { HelpCircle } from "lucide-react";
+import algosdk from "algosdk";
+import { useWallet } from "@txnlab/use-wallet-react";
 import {
   AlertDialog,
   AlertDialogAction,

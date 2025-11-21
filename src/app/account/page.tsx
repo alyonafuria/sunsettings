@@ -28,7 +28,7 @@ export default function AccountPage() {
     setLoadingItems(true);
     try {
       const params = new URLSearchParams({ address });
-      const res = await fetch(`/api/wallet-nfts?${params.toString()}`, {
+      const res = await fetch(`/api/algo-wallet-nfts?${params.toString()}`, {
         cache: "no-store",
       });
       const data = await res.json();
